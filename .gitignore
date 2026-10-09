@@ -1,0 +1,26 @@
+node_modules/
+.env
+identity.env
+.verification/
+data/*.db*
+uploads/*
+!uploads/.gitkeep
+!data/.gitkeep
+npm-debug.log*
+qa-docx/
+
+# Local runtime state, private source material and verification outputs
+.env.*
+!.env.example
+data/*
+!data/.gitkeep
+audits/
+seed-data/
+releases/*.zip
+releases/*.sha256
+releases/*
+!releases/*.md
+tmp/
+*.log
+*.sql.gz
+*.bak

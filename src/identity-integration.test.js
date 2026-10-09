@@ -1,0 +1,22 @@
+import test,{after} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import request from 'supertest';
+const temp=fs.mkdtempSync(path.join(os.tmpdir(),'quiz-independent-test-'));
+Object.assign(process.env,{DATA_DIR:path.join(temp,'data'),UPLOAD_DIR:path.join(temp,'uploads'),DB_HOST:'',DB_NAME:'',DB_USER:'',APP_PASSWORD:'',ADMIN_PASSWORD:'',AUTO_SEED_VOCABULARY:'0',IDENTITY_URL:'http://127.0.0.1:1',IDENTITY_CLIENT_KEY:'obsolete'});
+const {store}=await import('./db.js');
+const local=store.createCandidate('a','123456').candidate;
+const {app}=await import('./server.js');
+after(async()=>{await store.flush();fs.rmSync(temp,{recursive:true,force:true});});
+test('独立账号不依赖旧身份服务配置，修改密码仅本项目生效',async()=>{
+  const health=await request(app).get('/api/health');assert.equal(health.body.identityMode,'standalone');
+  assert.equal(store.createCandidate('甲','12345').ok,false);
+  assert.equal(store.createCandidate('甲','123456').ok,true);
+  assert.equal(store.createCandidate('x'.repeat(41),'123456').ok,false);
+  const login=await request(app).post('/api/account/login').send({username:'a',password:'123456'});assert.equal(login.status,200);assert.equal(login.body.id,local.id);
+  const changed=await request(app).post('/api/account/password').set('x-session-token',login.body.token).send({currentPassword:'123456',newPassword:'abcdef'});assert.equal(changed.status,200);
+  assert.equal((await request(app).get('/api/account/me').set('x-session-token',login.body.token)).status,401);
+  assert.equal((await request(app).post('/api/account/login').send({username:'a',password:'abcdef'})).status,200);
+});

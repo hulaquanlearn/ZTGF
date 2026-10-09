@@ -1,0 +1,10 @@
+import 'dotenv/config';
+const name=process.argv.find(arg=>arg.startsWith('--name='))?.slice(7)||process.env.NEW_ACCOUNT_NAME;
+const password=process.env.NEW_ACCOUNT_PASSWORD;
+if(!name||!password)throw new Error('请提供 --name=账号 和 NEW_ACCOUNT_PASSWORD 环境变量');
+const {store}=await import('../src/db.js');
+const result=store.createCandidate(name,password);
+if(!result.ok)throw new Error(result.error);
+await store.flush();
+console.log(`账号 ${result.candidate.name} 已创建，拥有完整的个人题库和学习功能。`);
+process.exit(0);

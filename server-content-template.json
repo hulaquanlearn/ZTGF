@@ -1,0 +1,10 @@
+{
+  "reviewed": false,
+  "vocabulary": [],
+  "corpus": [
+    {"category":"reading","title":"主题 · 标题","content":"英文学习材料","translation":"对应中文解释","examples":"场景及例句","tags":"环境、教育","source":"原创练习，非官方真题","notes":"适用难度及学习建议"}
+  ],
+  "banks": [
+    {"title":"独立的原创练习名称","track":"ielts","module":"reading","questions":[{"type":"choice","question":"完整题干","options":["选项A","选项B","选项C","选项D"],"answer":0,"explanation":"为什么选A，说明依据","points":1}]}
+  ]
+}
