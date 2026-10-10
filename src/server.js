@@ -16,6 +16,7 @@ import { seedVocabulary } from './seed-vocabulary.js';
 import { seedStudyBanks } from './seed-study.js';
 import { jobQueue } from './job-queue.js';
 import { corpusRouter } from './corpus.js';
+import { flightsRouter } from './flights.js';
 
 export const app = express();
 const TRACKS = {
@@ -42,7 +43,7 @@ await store.flush();
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.resolve('public')));
-app.get('/api/health', (_req, res) => res.json({ ok: true, database: store.storageMode(), schema: 'relational-v6', version: '6.2.1', identityMode: 'standalone', accountMode: 'unified', accountConfigured: store.listCandidates().length > 0, gradingMode: 'deterministic-only', translationConfigured: translationConfigured(), translationProvider: translationConfigured() ? String(process.env.TRANSLATION_PROVIDER).toLowerCase() : 'none' }));
+app.get('/api/health', (_req, res) => res.json({ ok: true, database: store.storageMode(), schema: 'relational-v6', version: '6.2.3', identityMode: 'standalone', accountMode: 'unified', accountConfigured: store.listCandidates().length > 0, gradingMode: 'deterministic-only', translationConfigured: translationConfigured(), translationProvider: translationConfigured() ? String(process.env.TRANSLATION_PROVIDER).toLowerCase() : 'none' }));
 // Retired privileged routes never become shortcuts around account ownership.
 app.use('/api/admin', (_req, res) => res.status(410).json({ error: '分级管理接口已停用，请登录后使用题库功能' }));
 app.post(['/api/account/login', '/api/session/login'], asyncRoute(async (req, res) => {
@@ -74,6 +75,7 @@ app.post('/api/account/password', asyncRoute(async (req, res) => {
   const token = createSession(req.account); await store.flush(); res.json({ ok: true, token });
 }));
 app.use('/api/corpus', corpusRouter(store));
+app.use('/api/flights', flightsRouter(upload));
 
 // All subjects use the same owned bank workspace.
 app.get(['/api/banks', '/api/quizzes', '/api/user/quizzes'], (req, res) => {
@@ -170,7 +172,7 @@ app.post('/api/exams/:id/submit', asyncRoute(async (req, res) => {
   const answers = sanitizeAnswers(req.body.answers ?? exam.draftAnswers ?? {}, exam.questions.length); if (!answers) return res.status(400).json({ error: '答题数据格式不正确' });
   const result = gradeAndSave(exam, req.account, answers); await store.flush(); res.json(result);
 }));
-app.get('/api/attempts', (req, res) => res.json(store.findAttemptsByCandidate(req.account.id)));
+app.get('/api/attempts', (req, res) => {const filters=studyFilters(req.query);res.json(store.findAttemptsByCandidate(req.account.id).filter(a=>(!filters.track||a.track===filters.track)&&(!filters.module||a.module===filters.module)&&(!filters.bankId||a.quizId===filters.bankId)));});
 app.get('/api/attempts/:id', (req, res) => { const row = store.getAttemptForCandidate(req.params.id, req.account.id); res.status(row ? 200 : 404).json(row || { error: '答题记录不存在' }); });
 app.post('/api/attempts/:id/retry', asyncRoute(async (req, res) => {
   const row = store.getAttemptForCandidate(req.params.id, req.account.id);
@@ -193,13 +195,13 @@ app.post('/api/attempts/:id/retry', asyncRoute(async (req, res) => {
   await store.flush(); res.status(201).json(examSummary(paper));
 }));
 app.get('/api/attempts/:id/export', asyncRoute(async (req, res) => { const row = store.getAttemptForCandidate(req.params.id, req.account.id); if (!row) return res.status(404).json({ error: '答题记录不存在' }); sendDocx(res, await attemptDocx(row, req.query.wrongOnly === '1'), req.query.wrongOnly === '1' ? 'wrong-questions.docx' : 'attempt.docx'); }));
-app.get('/api/wrong-questions', (req, res) => res.json(store.aggregateWrongQuestions(req.account.id)));
-app.get('/api/wrong-questions/export', asyncRoute(async (req, res) => sendDocx(res, await wrongQuestionsDocx(req.account.name, store.aggregateWrongQuestions(req.account.id)), 'wrong-book.docx')));
+app.get('/api/wrong-questions', (req, res) => res.json(store.aggregateWrongQuestions(req.account.id,studyFilters(req.query))));
+app.get('/api/wrong-questions/export', asyncRoute(async (req, res) => sendDocx(res, await wrongQuestionsDocx(req.account.name, store.aggregateWrongQuestions(req.account.id,studyFilters(req.query))), 'wrong-book.docx')));
 app.post('/api/wrong-exam', asyncRoute(async (req, res) => {
-  const pool = store.buildWrongExam(req.account.id); if (!pool.length) return res.status(400).json({ error: '暂无错题' });
+  const filters=studyFilters(req.body),pool = store.buildWrongExam(req.account.id,filters); if (!pool.length) return res.status(400).json({ error: '暂无错题' });
   const count = integer(req.body.count ?? Math.min(20, pool.length), 1, pool.length); if (!count) return res.status(400).json({ error: `错题数量需要为1至${pool.length}的整数` });
   const questions = shuffle(pool).slice(0, count); allocatePoints(questions);
-  const exam = saveExam(req.account, { title: '错题复习', questions }); await store.flush(); res.status(201).json(examSummary(exam));
+  const exam = saveExam(req.account, { title: '错题复习', track:filters.track||'general',module:filters.module||'general', questions }); await store.flush(); res.status(201).json(examSummary(exam));
 }));
 
 // Shared local words are read-only; personal imports are isolated by owner.
@@ -281,7 +283,7 @@ app.post('/api/translate', asyncRoute(async (req, res) => {
 app.get('/api/translations', (req, res) => res.json(store.listTranslations(req.account.id)));
 app.use('/api', (_req, res) => res.status(404).json({ error: '接口不存在' }));
 // History routes: refresh/direct links return the shell, never unknown APIs or files.
-app.get(/^\/(?:login|banks|bank\/[^/]+|import(?:\/[^/]+){0,2}|build\/[^/]+|exam\/[^/]+|attempt\/[^/]+|results|wrong|english(?:\/[^/]+)?|ielts(?:\/[^/]+)?|corpus(?:\/[^/]+)?|settings)\/?$/, (_req,res)=>res.sendFile(path.resolve('public/index.html')));
+app.get(/^\/(?:login|banks(?:\/(?:results|wrong))?|bank\/[^/]+|import(?:\/[^/]+){0,2}|build\/[^/]+|exam\/[^/]+|attempt\/[^/]+|results|wrong|english(?:\/[^/]+)?|ielts(?:\/[^/]+)?|corpus(?:\/[^/]+)?|flights|settings)\/?$/, (_req,res)=>res.sendFile(path.resolve('public/index.html')));
 app.use((error, _req, res, _next) => { const status = error instanceof multer.MulterError ? 400 : Number(error.status) || 500; if (status >= 500) console.error(error); res.status(status).json({ error: error.message || '服务器错误' }); });
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const host = process.env.HOST || '0.0.0.0', port = Number(process.env.PORT || 3080);
@@ -299,6 +301,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 function asyncRoute(handler) { return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next); }
 function text(value, max) { return String(value ?? '').trim().slice(0, max); }
 function optionalTrack(value) { const key = text(value, 100); return ['general', ...Object.keys(TRACKS)].includes(key) ? key : null; }
+function studyFilters(value){const track=optionalTrack(value.track);if(value.track&&!track){const error=new Error('学习方向无效');error.status=400;throw error;}return {track,module:text(value.module,100),bankId:text(value.bankId,100)};}
 function inputTrack(value) { return text(value, 100) ? optionalTrack(value) : 'general'; }
 function integer(value, min, max) { const number = Number(value); return Number.isInteger(number) && number >= min && number <= max ? number : null; }
 function sessionToken(req) { return String(req.get('x-session-token') || ''); }

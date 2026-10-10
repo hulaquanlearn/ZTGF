@@ -28,10 +28,20 @@ try {
   const page = await (await fetch(`${base}/`)).text();
   check(page.includes('/workspace.js') && page.includes('/app.css') && page.includes('href="/banks"') && page.includes('href="/english"') && page.includes('href="/ielts"') && page.includes('href="/corpus"'), '新版界面资源缺失');
   check((await fetch(`${base}/workspace.js`)).ok && (await fetch(`${base}/app.css`)).ok, '界面文件无法加载');
+  for(const asset of ['flight-workbench.js','flight-workbench.css','workbench.css'])check((await fetch(`${base}/${asset}`)).ok,'改版资源无法加载：'+asset);
+  check(page.includes('id="siteHeader"')&&!page.includes('id="sidebar"')&&page.includes('考研英语'),'顶部导航改版未包含在服务中');
   check((await fetch(`${base}/api/banks`)).status === 401, '匿名请求未被拒绝');
   const session = await (await fetch(`${base}/api/account/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'smoke-account', password: 'smoke-private-password' }) })).json();
   check(session.token && !Object.hasOwn(session, 'role'), '统一账号登录失败');
   const headers = { 'Content-Type': 'application/json', 'x-session-token': session.token };
+  const flights=[{id:'a',number:'NX632',from:'MFM',to:'TPE',departure:'0800',arrival:'0935',days:'1234567',start:'2026-10-25',end:'2027-03-27',fromZone:'Asia/Shanghai',toZone:'Asia/Shanghai'},{id:'b',number:'NX631',from:'TPE',to:'MFM',departure:'1035',arrival:'1235',days:'1234567',start:'2026-10-25',end:'2027-03-27',fromZone:'Asia/Shanghai',toZone:'Asia/Shanghai'}];
+  const pairs=[{outId:'a',backId:'b',returnDays:0,outOpening:'0650'}];
+  const flightPreview=await (await fetch(`${base}/api/flights/preview`,{method:'POST',headers,body:JSON.stringify({flights,pairs,mode:'season'})})).json();
+  check(flightPreview.rows?.length===2&&flightPreview.headers?.[6]==='离港时间（北京时间）'&&flightPreview.rows[0][5]==='0650','整季航班九列与人工开会时间预览失败');
+  const draftId='a1234567-1234-4321-9876-123456789012',draftUrl=`${base}/api/flights/drafts/${draftId}`;
+  const draftSaved=await fetch(draftUrl,{method:'PUT',headers,body:JSON.stringify({revision:0,title:'隔离草稿检查',data:{flights,start:'2026-10-25',sourceName:'smoke'},pairs,excluded:[],reviewed:[],mode:'season'})});
+  check(draftSaved.ok,'航班草稿落盘失败');
+  const draftRestored=await (await fetch(draftUrl,{headers})).json();check(draftRestored.revision===1&&draftRestored.pairs?.length===1,'航班草稿恢复失败');
   const words = await (await fetch(`${base}/api/vocabulary?browse=1&track=english`, { headers })).json();
   check(words.length >= 20, '英语基础词库未加载');
   const starterBanks = await (await fetch(`${base}/api/banks`, { headers })).json();
@@ -43,7 +53,7 @@ try {
   const paper = await (await fetch(`${base}/api/exams/${exam.id}`, { headers })).json(); check(!Object.hasOwn(paper.questions[0], 'answer'), '试卷泄漏答案');
   const submitted = await (await fetch(`${base}/api/exams/${exam.id}/submit`, { method: 'POST', headers, body: JSON.stringify({ answers: { 0: true } }) })).json(); check(submitted.score === 100, '规则判分失败');
   check((await fetch(`${base}/api/admin/quizzes`, { headers })).status === 410, '旧分级接口未关闭');
-  console.log(JSON.stringify({ ok: true, health, unifiedAccount: true, customBanks: true, randomPractice: true, deterministicScoring: true, starterBanks: starterBanks.length, englishWords: words.length }));
+  console.log(JSON.stringify({ ok: true, health, topNavigation:true,seasonFlights:true,persistentFlightDrafts:true,unifiedAccount: true, customBanks: true, randomPractice: true, deterministicScoring: true, starterBanks: starterBanks.length, englishWords: words.length }));
 } finally {
   if (child.exitCode === null) { child.kill('SIGTERM'); await exited; }
   fs.rmSync(temporary, { recursive: true, force: true });

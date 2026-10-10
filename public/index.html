@@ -8,28 +8,27 @@
   <link rel="stylesheet" href="/app.css">
   <link rel="stylesheet" href="/refinements.css?v=20261008-p1">
   <link rel="stylesheet" href="/corpus.css">
+  <link rel="stylesheet" href="/flight-workbench.css?v=20261010-r2">
+  <link rel="stylesheet" href="/workbench.css?v=20261010-r2">
 </head>
 <body>
-  <aside id="sidebar" class="sidebar hidden">
-    <a class="brand" href="/"><span class="brand-icon">智</span><span>智题工坊<small>我的学习空间</small></span></a>
+  <header id="siteHeader" class="site-header hidden">
+    <a class="brand" href="/"><span class="brand-icon">智</span><span>智题工坊</span></a>
+    <button id="navToggle" class="secondary nav-toggle" aria-label="打开导航菜单" aria-controls="mainNav" aria-expanded="false">菜单</button>
     <nav id="mainNav" aria-label="主导航">
-      <a href="/" data-section="home"><span aria-hidden="true">◈</span>学习概览</a>
-      <a href="/banks" data-section="banks"><span aria-hidden="true">▤</span>我的题库</a>
-      <a href="/english" data-section="english"><span aria-hidden="true">Aa</span>英语学习</a>
-      <a href="/ielts" data-section="ielts"><span aria-hidden="true">◎</span>雅思学习</a>
-      <a href="/corpus" data-section="corpus"><span aria-hidden="true">▧</span>语料库</a>
-      <div class="nav-divider"></div>
-      <a href="/results" data-section="results"><span aria-hidden="true">▥</span>学习记录</a>
-      <a href="/wrong" data-section="wrong"><span aria-hidden="true">↺</span>错题本</a>
-      <a href="/settings" data-section="settings"><span aria-hidden="true">⚙</span>账号设置</a>
+      <a href="/" data-section="home">首页</a>
+      <a href="/banks" data-section="banks">我的题库</a>
+      <a href="/english" data-section="english">考研英语</a>
+      <a href="/ielts" data-section="ielts">雅思学习</a>
+      <a href="/corpus" data-section="corpus">语料库</a>
+      <a href="/flights" data-section="flights">实用工具</a>
     </nav>
-    <div class="sidebar-bottom"><div class="account-avatar" aria-hidden="true">我</div><div class="account-info"><b id="accountName"></b></div><button id="logoutButton" class="icon-button" aria-label="退出登录" title="退出登录">↗</button></div>
-  </aside>
+    <div class="header-account"><span id="accountName"></span><button id="logoutButton" class="ghost small">退出</button></div>
+  </header>
   <div id="workspace" class="workspace">
-    <header id="topbar" class="topbar hidden"><button id="navToggle" class="icon-button mobile-menu" aria-label="打开导航菜单" aria-controls="sidebar" aria-expanded="false">☰</button><span id="breadcrumb">学习概览</span></header>
     <main id="app"><div class="loading" role="status">正在加载学习空间…</div></main>
   </div>
   <div id="toast" class="toast hidden" role="status"></div>
-  <script type="module" src="/workspace.js?v=20261008-p1"></script>
+  <script type="module" src="/workspace.js?v=20261010-r2"></script>
 </body>
 </html>

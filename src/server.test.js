@@ -24,6 +24,20 @@ const fixture = path.resolve('test-fixture.md');
 const withToken = (req, token) => req.set('x-session-token', token);
 const login = (username, password) => request(app).post('/api/account/login').send({ username, password });
 
+test('航班工具深层路由、登录保护、人工配对预览与 XLSX 导出',async()=>{
+  const {parseFlightText}=await import('./flights.js');
+  const data=parseFlightText('WITH EFFECT FROM 25Oct2026 to 27Mar2027\nNX6321234567MFM0800TPE0935A321\nNX6311234567TPE1035MFM1235A321');
+  const payload={flights:data.flights,date:'2026-10-25',pairs:[{outId:'0',backId:'1',returnDays:0}]};
+  assert.equal((await request(app).get('/flights')).status,200);
+  for(const endpoint of ['preview','export','extract'])assert.equal((await request(app).post('/api/flights/'+endpoint).send(payload)).status,401);
+  const a=await account('flight-test');
+  const preview=await withToken(request(app).post('/api/flights/preview'),a.token).send(payload);
+  assert.equal(preview.status,200);assert.equal(preview.body.headers.length,9);assert.equal(preview.body.rows[0][6],'0800');
+  const exported=await withToken(request(app).post('/api/flights/export'),a.token).send(payload);
+  assert.equal(exported.status,200);assert.match(exported.headers['content-type'],/spreadsheetml/);
+  assert.equal((await withToken(request(app).post('/api/flights/preview'),a.token).send({...payload,pairs:[]})).status,400);
+});
+
 test('语料四分类、查看编辑搜索、冲突提示及所有者隔离',async()=>{
   const a=await account('corpus-a'),b=await account('corpus-b');
   for(const category of ['reading','listening','writing','speaking']){
@@ -72,6 +86,35 @@ async function bank(owner, questions = [{ type: 'boolean', question: '这是判�
 async function exam(owner, bankId, counts = { boolean: 1 }) {
   return withToken(request(app).post(`/api/banks/${bankId}/random-exam`), owner.token).send(counts);
 }
+
+test('模块内学习记录、错题筛选和错题练习方向一致，账号彼此隔离',async()=>{
+  const owner=await account('scope'),other=await account('scope-other'),ids={};
+  for(const track of ['general','postgraduate','ielts']){
+    const created=await bank(owner,[{type:'boolean',question:track+' 独有错题',answer:true}],{track,module:track==='general'?'general':'reading'});ids[track]=created.id;
+    const paper=await exam(owner,created.id);assert.equal(paper.status,201);
+    const submitted=await withToken(request(app).post('/api/exams/'+paper.body.id+'/submit'),owner.token).send({answers:{0:false}});assert.equal(submitted.status,200);
+  }
+  for(const track of Object.keys(ids)){
+    const attempts=await withToken(request(app).get('/api/attempts?track='+track),owner.token);assert.equal(attempts.body.length,1);assert.equal(attempts.body[0].track,track);
+    const wrong=await withToken(request(app).get('/api/wrong-questions?track='+track+'&bankId='+ids[track]),owner.token);assert.equal(wrong.body.length,1);assert.equal(wrong.body[0].question,track+' 独有错题');
+    const practiced=await withToken(request(app).post('/api/wrong-exam'),owner.token).send({track,module:track==='general'?'general':'reading',bankId:ids[track]});assert.equal(practiced.status,201);assert.equal(store.getExam(practiced.body.id).track,track);
+  }
+  assert.equal((await withToken(request(app).get('/api/wrong-questions?track=postgraduate'),other.token)).body.length,0);
+  assert.equal((await withToken(request(app).get('/api/wrong-questions?track=ielts&bankId='+ids.general),owner.token)).body.length,0);
+});
+
+test('航班命名草稿持久保存、保留多版本、账号隔离和并发覆盖保护',async()=>{
+  const owner=await account('flight-draft'),other=await account('flight-draft-other'),id=crypto.randomUUID(),second=crypto.randomUUID();
+  const data={sourceName:'season.pdf',start:'2026-10-25',flights:[{id:'0'}]},draft={title:'人工航班表',data,pairs:[],excluded:[],reviewed:[],revision:0,mode:'season'};
+  const saved=await withToken(request(app).put('/api/flights/drafts/'+id),owner.token).send(draft);assert.equal(saved.status,200);assert.equal(saved.body.revision,1);
+  assert.equal((await withToken(request(app).put('/api/flights/drafts/'+id),owner.token).send(draft)).status,409);
+  assert.equal((await withToken(request(app).get('/api/flights/drafts/'+id),other.token)).status,404);
+  assert.equal((await withToken(request(app).get('/api/flights/drafts/'+id),owner.token)).body.title,'人工航班表');
+  assert.equal((await withToken(request(app).put('/api/flights/drafts/'+second),owner.token).send({...draft,title:'新版本'})).status,200);
+  assert.equal((await withToken(request(app).get('/api/flights/drafts'),owner.token)).body.length,2);
+  const races=await Promise.all([1,2].map(n=>withToken(request(app).put('/api/flights/drafts/'+id),owner.token).send({...draft,title:'窗口'+n,revision:1})));
+  assert.deepEqual(races.map(r=>r.status).sort(),[200,409]);assert.equal((await withToken(request(app).get('/api/flights/drafts/'+id),owner.token)).body.revision,2);
+});
 after(async () => { await store.flush(); fs.rmSync(temporary, { recursive: true, force: true }); });
 
 test('本次错题重练隔离账号、复用未完成试卷并保留删除后的材料快照', async () => {
