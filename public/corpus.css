@@ -10,10 +10,13 @@
 .corpus-topic-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; background:#f3f7f4; padding:18px 22px; }
 .corpus-topic-heading h2 { display:flex; align-items:center; flex-wrap:wrap; gap:12px; font-size:20px; margin:0; overflow-wrap:anywhere; }
 .corpus-topic-heading button { flex-shrink:0; }
-.corpus-topic-items { padding:0 22px; }
-.corpus-entry { padding:20px 0; }
+.corpus-topic-items { padding:4px 22px; }
+.corpus-topic-items .corpus-entry { padding:20px 0; align-items:flex-start; gap:24px; }
+.corpus-entry > .actions { align-self:center; flex-shrink:0; }
 .corpus-entry-heading { display:flex; align-items:baseline; gap:10px; }
 .corpus-entry-heading h3 { overflow-wrap:anywhere; white-space:pre-wrap; }
+.corpus-entry .bank-info { flex:1; }
+.corpus-entry .corpus-tags { margin-top:10px; margin-bottom:0; line-height:1.7; }
 .corpus-entry-number { display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#edf3ee; color:#3a6550; min-width:26px; height:26px; font-size:13px; flex-shrink:0; }
 .corpus-entry .corpus-preview,.corpus-example,.corpus-tags { margin-left:36px; }
 .corpus-example { color:#68766b; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; margin-top:8px; margin-bottom:8px; }
@@ -23,7 +26,9 @@
 #corpusSearch input { flex: 1; min-width: 150px; }
 @media(max-width:600px) {
   .corpus-topic-heading { padding:14px; flex-wrap:wrap; }
-  .corpus-topic-items { padding:0 14px; }
+  .corpus-topic-items { padding:4px 16px; }
+  .corpus-topic-items .corpus-entry { padding:18px 0; gap:14px; }
+  .corpus-topic-items .corpus-entry > .actions { margin-left:36px; width:calc(100% - 36px); justify-content:flex-end; }
   #corpusRows .bank-row { flex-wrap: wrap; }
   #corpusRows .bank-info { flex-basis:100%; min-width:0; }
   #corpusRows .actions { width:100%; gap:8px; padding-left:0; }

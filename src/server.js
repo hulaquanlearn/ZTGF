@@ -16,7 +16,9 @@ import { seedVocabulary } from './seed-vocabulary.js';
 import { seedStudyBanks } from './seed-study.js';
 import { jobQueue } from './job-queue.js';
 import { corpusRouter } from './corpus.js';
+import { createDataFiles, trackedUploads, managedExports } from './data-files.js';
 import { flightsRouter } from './flights.js';
+import { cleanupExpiredUploads, cleanupExpiredFlightTrash } from './upload-cleanup.js';
 
 export const app = express();
 const TRACKS = {
@@ -28,7 +30,13 @@ const TYPES = { boolean: '判断题', choice: '单选题', multiple: '多选题'
 const loginUsage = new Map(), translationUsage = new Map();
 const uploadDir = path.resolve(process.env.UPLOAD_DIR || 'uploads');
 await fs.mkdir(uploadDir, { recursive: true });
-const upload = multer({ dest: uploadDir, limits: { fileSize: Number(process.env.MAX_UPLOAD_MB || 20) * 1024 * 1024, files: 1 }, fileFilter: (_req, file, cb) => cb(null, /\.(pdf|doc|docx|md|markdown|txt|xlsx|csv)$/i.test(file.originalname)) });
+await cleanupExpiredUploads(uploadDir);
+const flightDraftRoot=path.resolve(process.env.DATA_DIR||'data','flight-drafts');
+await cleanupExpiredFlightTrash(flightDraftRoot);
+const importCleanupTimer=setInterval(()=>Promise.all([cleanupExpiredUploads(uploadDir),cleanupExpiredFlightTrash(flightDraftRoot)]).catch(e=>console.error('Import cleanup failed:',e.message)),3600000);
+importCleanupTimer.unref();
+export const dataFiles=createDataFiles(path.resolve(process.env.DATA_DIR||'data','managed-files'));
+const upload = trackedUploads(multer({ dest: uploadDir, limits: { fileSize: Number(process.env.MAX_UPLOAD_MB || 20) * 1024 * 1024, files: 1 }, fileFilter: (_req, file, cb) => cb(null, /\.(pdf|doc|docx|md|markdown|txt|xlsx|csv)$/i.test(file.originalname)) }),dataFiles);
 const bootstrapName = String(process.env.APP_USERNAME || process.env.ADMIN_USERNAME || 'admin').trim();
 const bootstrapPassword = process.env.APP_PASSWORD || process.env.ADMIN_PASSWORD || '';
 if (bootstrapPassword) {
@@ -43,7 +51,8 @@ await store.flush();
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.resolve('public')));
-app.get('/api/health', (_req, res) => res.json({ ok: true, database: store.storageMode(), schema: 'relational-v6', version: '6.2.3', identityMode: 'standalone', accountMode: 'unified', accountConfigured: store.listCandidates().length > 0, gradingMode: 'deterministic-only', translationConfigured: translationConfigured(), translationProvider: translationConfigured() ? String(process.env.TRANSLATION_PROVIDER).toLowerCase() : 'none' }));
+app.get('/downloads/:ticket',dataFiles.serve);
+app.get('/api/health', (_req, res) => res.json({ ok: true, database: store.storageMode(), schema: 'relational-v6', version: '6.3.3', identityMode: 'standalone', accountMode: 'unified', accountConfigured: store.listCandidates().length > 0, gradingMode: 'deterministic-only', translationConfigured: translationConfigured(), translationProvider: translationConfigured() ? String(process.env.TRANSLATION_PROVIDER).toLowerCase() : 'none' }));
 // Retired privileged routes never become shortcuts around account ownership.
 app.use('/api/admin', (_req, res) => res.status(410).json({ error: '分级管理接口已停用，请登录后使用题库功能' }));
 app.post(['/api/account/login', '/api/session/login'], asyncRoute(async (req, res) => {
@@ -74,8 +83,10 @@ app.post('/api/account/password', asyncRoute(async (req, res) => {
   store.resetCandidatePassword(req.account.id, password);
   const token = createSession(req.account); await store.flush(); res.json({ ok: true, token });
 }));
+app.use('/api/data',dataFiles.router);
+app.use('/api',managedExports(dataFiles));
 app.use('/api/corpus', corpusRouter(store));
-app.use('/api/flights', flightsRouter(upload));
+app.use('/api/flights', flightsRouter(upload,dataFiles));
 
 // All subjects use the same owned bank workspace.
 app.get(['/api/banks', '/api/quizzes', '/api/user/quizzes'], (req, res) => {
@@ -134,9 +145,12 @@ app.post(['/api/import/preview', '/api/user/preview'], upload.single('file'), as
   } finally { await fs.unlink(req.file.path).catch(() => {}); }
 }));
 app.post(['/api/import/confirm', '/api/user/confirm-import'], asyncRoute(async (req, res) => {
+  if(req.body.dataFileId)await dataFiles.get(req.account.id,req.body.dataFileId);
   const metadata = bankMetadata({ ...req.body, title: req.body.title || req.body.sourceName || '导入题库' }), checked = validateQuestions(req.body.questions);
   if (metadata.error || checked.error) return res.status(400).json(metadata.error ? { error: metadata.error } : checked);
   const bank = saveBank(req.account, metadata, checked.questions, text(req.body.sourceName, 255)); await store.flush();
+  await dataFiles.link(req.account.id,req.body.dataFileId,{label:bank.title,url:'/bank/'+bank.id},{includeDeleted:true});
+  if(req.body.dataFileId)await dataFiles.update(req.account.id,req.body.dataFileId,{category:metadata.track==='general'?'banks':metadata.track,sourceOptions:metadata});
   res.status(201).json({ id: bank.id, title: bank.title, questionCount: bank.questions.length, category: bank.category, visibility: 'private' });
 }));
 app.get(['/api/jobs', '/api/user/jobs'], asyncRoute(async (req, res) => res.json(await jobQueue.list(req.account.id))));
@@ -219,10 +233,18 @@ app.post('/api/vocabulary/preview', upload.single('file'), asyncRoute(async (req
   finally { await fs.unlink(req.file.path).catch(() => {}); }
 }));
 app.post('/api/vocabulary/import', asyncRoute(async (req, res) => {
+  const sourceFile=req.body.dataFileId?await dataFiles.get(req.account.id,req.body.dataFileId):null;
   const entries = req.body.entries;
   if (!Array.isArray(entries) || !entries.length || entries.length > 20000) return res.status(400).json({ error: '请提供1至20000个词条' });
-  if (entries.some(entry => !entry || hasRetiredVocabularyFields(entry) || !inputTrack(entry.track) || !text(entry.zh, 500) || !text(entry.en, 500))) return res.status(400).json({ error: '每个词条需要中文和英文，请使用新版模板及有效学习方向' });
-  const result = store.addVocabulary(entries.map(entry => ({ ...entry, reviewStatus: 'approved' })), { ownerId: req.account.id }); await store.flush(); res.status(201).json({ added: result.added.length, duplicates: result.duplicates.length });
+  if (entries.some(entry => !entry || hasRetiredVocabularyFields(entry) || !text(entry.zh, 500) || !text(entry.en, 500))) return res.status(400).json({ error: '每个词条需要中文和英文，请使用新版模板' });
+  const defaultTrack=Object.hasOwn(TRACKS,sourceFile?.sourceOptions?.track)?sourceFile.sourceOptions.track:'postgraduate';
+  const normalized=entries.map(entry=>({...entry,track:text(entry.track,100)||defaultTrack,reviewStatus:'approved'}));
+  if(normalized.some(entry=>!Object.hasOwn(TRACKS,entry.track)))return res.status(400).json({error:'词汇学习方向须为 english（英语基础）、postgraduate（考研英语）或 ielts（雅思）'});
+  const result = store.addVocabulary(normalized, { ownerId: req.account.id }); await store.flush();
+  const tracks=[...new Set(normalized.map(x=>x.track))];
+  for(const track of tracks)await dataFiles.link(req.account.id,req.body.dataFileId,{label:TRACKS[track].name+'词汇',url:'/english/dictionary?track='+track},{includeDeleted:true});
+  if(req.body.dataFileId)await dataFiles.update(req.account.id,req.body.dataFileId,{category:tracks[0],categories:tracks});
+  res.status(201).json({ added: result.added.length, duplicates: result.duplicates.length });
 }));
 app.put('/api/vocabulary/:id', asyncRoute(async (req, res) => {
   const word = store.getVocabulary(req.params.id, req.account.id); if (!word || word.ownerId !== req.account.id) return res.status(404).json({ error: '个人词条不存在' });
@@ -283,7 +305,7 @@ app.post('/api/translate', asyncRoute(async (req, res) => {
 app.get('/api/translations', (req, res) => res.json(store.listTranslations(req.account.id)));
 app.use('/api', (_req, res) => res.status(404).json({ error: '接口不存在' }));
 // History routes: refresh/direct links return the shell, never unknown APIs or files.
-app.get(/^\/(?:login|banks(?:\/(?:results|wrong))?|bank\/[^/]+|import(?:\/[^/]+){0,2}|build\/[^/]+|exam\/[^/]+|attempt\/[^/]+|results|wrong|english(?:\/[^/]+)?|ielts(?:\/[^/]+)?|corpus(?:\/[^/]+)?|flights|settings)\/?$/, (_req,res)=>res.sendFile(path.resolve('public/index.html')));
+app.get(/^\/(?:login|data|banks(?:\/(?:results|wrong))?|bank\/[^/]+|import(?:\/[^/]+){0,2}|build\/[^/]+|exam\/[^/]+|attempt\/[^/]+|results|wrong|english(?:\/[^/]+)?|ielts(?:\/[^/]+)?|corpus(?:\/[^/]+)?|flights(?:\/standby)?|settings)\/?$/, (_req,res)=>res.sendFile(path.resolve('public/index.html')));
 app.use((error, _req, res, _next) => { const status = error instanceof multer.MulterError ? 400 : Number(error.status) || 500; if (status >= 500) console.error(error); res.status(status).json({ error: error.message || '服务器错误' }); });
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const host = process.env.HOST || '0.0.0.0', port = Number(process.env.PORT || 3080);

@@ -1,6 +1,6 @@
 {
   "name": "quizforge",
-  "version": "6.2.3",
+  "version": "6.3.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -34,6 +34,7 @@
     "word-extractor": "^1.0.4"
   },
   "devDependencies": {
+    "jsdom": "26.1.0",
     "supertest": "^7.1.1"
   },
   "overrides": {

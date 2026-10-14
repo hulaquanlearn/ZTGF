@@ -5,11 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#176b57">
   <title>智题工坊 · 我的学习空间</title>
-  <link rel="stylesheet" href="/app.css">
+  <link rel="stylesheet" href="/app.css?v=20261014-cleanup">
   <link rel="stylesheet" href="/refinements.css?v=20261008-p1">
-  <link rel="stylesheet" href="/corpus.css">
-  <link rel="stylesheet" href="/flight-workbench.css?v=20261010-r2">
-  <link rel="stylesheet" href="/workbench.css?v=20261010-r2">
+  <link rel="stylesheet" href="/corpus.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/flight-workbench.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/standby-workbench.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/workbench.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/redesign.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/login-variants.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/theme.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/navigation-layout.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/home.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/common-controls.css?v=20261014-cleanup">
 </head>
 <body>
   <header id="siteHeader" class="site-header hidden">
@@ -21,14 +28,14 @@
       <a href="/english" data-section="english">考研英语</a>
       <a href="/ielts" data-section="ielts">雅思学习</a>
       <a href="/corpus" data-section="corpus">语料库</a>
-      <a href="/flights" data-section="flights">实用工具</a>
+      <details id="toolsMenu" class="tools-menu"><summary>实用工具 <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg></summary><div class="tools-dropdown"><a href="/flights">航班时刻表</a><a href="/flights/standby">备份方案</a></div></details>
     </nav>
-    <div class="header-account"><span id="accountName"></span><button id="logoutButton" class="ghost small">退出</button></div>
+    <details id="accountMenu" class="header-account account-menu"><summary class="account-trigger" aria-label="账号菜单"><span id="accountAvatar" class="account-avatar">我</span><span class="account-label"><span id="accountName"></span><small>我的空间</small></span><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg></summary><div class="account-dropdown"><p>当前账号</p><strong id="accountMenuName"></strong><a href="/data" id="accountDataLink">数据管理</a><button id="logoutButton">退出登录</button></div></details>
   </header>
   <div id="workspace" class="workspace">
     <main id="app"><div class="loading" role="status">正在加载学习空间…</div></main>
   </div>
   <div id="toast" class="toast hidden" role="status"></div>
-  <script type="module" src="/workspace.js?v=20261010-r2"></script>
+  <script type="module" src="/workspace.js?v=20261014-cleanup"></script>
 </body>
 </html>

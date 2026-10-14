@@ -19,7 +19,7 @@ const legacyId = crypto.randomUUID(), privateId = crypto.randomUUID();
 store.addQuiz({ id: legacyId, title: '旧版公共题库', status: 'published', questions: [], createdAt: new Date().toISOString() });
 store.addQuiz({ id: privateId, title: '原有私有题库', status: 'published', visibility: 'private', ownerId: preserved.id, questions: [], createdAt: new Date().toISOString() });
 const oldAdminToken = store.createSession({ role: 'admin', name: 'old-admin' });
-const { app } = await import('./server.js');
+const { app, dataFiles } = await import('./server.js');
 const fixture = path.resolve('test-fixture.md');
 const withToken = (req, token) => req.set('x-session-token', token);
 const login = (username, password) => request(app).post('/api/account/login').send({ username, password });
@@ -29,6 +29,8 @@ test('航班工具深层路由、登录保护、人工配对预览与 XLSX 导�
   const data=parseFlightText('WITH EFFECT FROM 25Oct2026 to 27Mar2027\nNX6321234567MFM0800TPE0935A321\nNX6311234567TPE1035MFM1235A321');
   const payload={flights:data.flights,date:'2026-10-25',pairs:[{outId:'0',backId:'1',returnDays:0}]};
   assert.equal((await request(app).get('/flights')).status,200);
+  assert.equal((await request(app).get('/flights/standby')).status,200);
+  assert.equal((await request(app).post('/api/flights/standby/analyze').send({duties:[]})).status,401);
   for(const endpoint of ['preview','export','extract'])assert.equal((await request(app).post('/api/flights/'+endpoint).send(payload)).status,401);
   const a=await account('flight-test');
   const preview=await withToken(request(app).post('/api/flights/preview'),a.token).send(payload);
@@ -56,8 +58,63 @@ test('语料四分类、查看编辑搜索、冲突提示及所有者隔离',asy
   assert.equal((await withToken(request(app).get('/api/corpus'),b.token)).body.length,0);
 });
 test('普通路径直接打开刷新返回页面，未知接口不伪装成网页',async()=>{
-  for(const url of ['/login','/corpus','/corpus/writing','/ielts/reading','/banks']){const response=await request(app).get(url);assert.equal(response.status,200);assert.match(response.text,/智题工坊/);}
+  for(const url of ['/login','/corpus','/corpus/writing','/ielts/reading','/banks','/data','/flights?draft=preview']){const response=await request(app).get(url);assert.equal(response.status,200);assert.match(response.text,/智题工坊/);}
   const response=await request(app).get('/api/not-existing');assert.notEqual(response.status,200);
+});
+
+test('导入原件可管理和重导入，确认与下载均隔离账号，回收后业务题库保留',async()=>{
+  const owner=await account('managed-bank'),other=await account('managed-other');
+  const preview=await withToken(request(app).post('/api/import/preview'),owner.token)
+    .field('title','我的阅读资料').field('track','ielts').field('module','reading').field('category','Part 1').field('mode','extract').attach('file',fixture);
+  assert.equal(preview.status,200);const fileId=preview.body.dataFileId;assert.ok(fileId);
+  const payload={title:'修改后的题库',track:'ielts',module:'reading',category:'Part 2',sourceName:preview.body.sourceName,dataFileId:fileId,questions:preview.body.questions};
+  const before=(await withToken(request(app).get('/api/banks'),other.token)).body.length;
+  assert.equal((await withToken(request(app).post('/api/import/confirm'),other.token).send(payload)).status,404);
+  assert.equal((await withToken(request(app).get('/api/banks'),other.token)).body.length,before);
+  assert.equal((await withToken(request(app).post(`/api/data/${fileId}/reimport`),other.token)).status,404);
+  const confirmed=await withToken(request(app).post('/api/import/confirm'),owner.token).send(payload);assert.equal(confirmed.status,201);
+  const files=(await withToken(request(app).get('/api/data'),owner.token)).body,original=files.find(row=>row.id===fileId);
+  assert.equal(original.category,'ielts');assert.equal(original.sourceOptions.module,'reading');assert.equal(original.sourceOptions.category,'Part 2');
+  assert.ok(original.links.some(link=>link.url==='/bank/'+confirmed.body.id));
+  const parsedAgain=await withToken(request(app).post(`/api/data/${fileId}/reimport`),owner.token);
+  assert.equal(parsedAgain.status,200);assert.equal(parsedAgain.body.dataFileId,fileId);assert.equal(parsedAgain.body.questions.length,preview.body.questions.length);
+  assert.equal(parsedAgain.body.sourceOptions.title,'修改后的题库');
+  const grant=await withToken(request(app).post(`/api/data/${fileId}/download`),owner.token);assert.equal(grant.status,200);
+  const downloaded=await request(app).get(grant.body.url);assert.equal(downloaded.status,200);assert.equal(downloaded.text,fs.readFileSync(fixture,'utf8'));
+  assert.equal((await withToken(request(app).post(`/api/data/${fileId}/download`),other.token)).status,404);
+  assert.equal((await withToken(request(app).delete(`/api/data/${fileId}`),owner.token)).status,200);
+  assert.equal((await request(app).get(grant.body.url)).status,404);
+  assert.equal((await withToken(request(app).get('/api/banks/'+confirmed.body.id),owner.token)).status,200);
+  assert.equal((await withToken(request(app).post(`/api/data/${fileId}/restore`),owner.token)).status,200);
+  assert.equal((await request(app).get(grant.body.url)).status,200);
+});
+
+test('题库导出生成持久 HTTP 下载记录，文件内容仍为有效 Word',async()=>{
+  const owner=await account('managed-export'),created=await bank(owner,[{type:'boolean',question:'下载测试题',answer:true}]);
+  const exported=await withToken(request(app).get(`/api/banks/${created.id}/export?answers=1`),owner.token)
+    .set('x-download-mode','managed').set('x-download-name',encodeURIComponent('我的题库与答案.docx')).set('x-data-category','banks');
+  assert.equal(exported.status,200);assert.equal(exported.body.name,'我的题库与答案.docx');assert.match(exported.body.url,/^\/downloads\/[a-f0-9]{64}$/);
+  const doc=await request(app).get(exported.body.url).buffer(true).parse((response,done)=>{const parts=[];response.on('data',chunk=>parts.push(chunk));response.on('end',()=>done(null,Buffer.concat(parts)));});
+  assert.equal(doc.status,200);assert.match(doc.headers['content-type'],/wordprocessingml/);assert.equal(doc.body.subarray(0,2).toString(),'PK');assert.ok(doc.body.length>1000);
+  const rows=(await withToken(request(app).get('/api/data'),owner.token)).body;
+  assert.ok(rows.some(row=>row.kind==='export'&&row.name==='我的题库与答案.docx'));
+});
+
+test('词汇原表与解析失败的文件均可在数据管理找回',async()=>{
+  const owner=await account('managed-words');
+  const csv=Buffer.from('英文,中文,学习方向\nplan,方案,ielts\nrevise,修订,ielts\nincomplete,,ielts\n');
+  const preview=await withToken(request(app).post('/api/vocabulary/preview'),owner.token).attach('file',csv,{filename:'个人词汇.csv'});
+  assert.equal(preview.status,200);assert.equal(preview.body.entries.length,2);assert.equal(preview.body.incomplete.length,1);
+  const saved=await withToken(request(app).post('/api/vocabulary/import'),owner.token).send({entries:preview.body.entries,dataFileId:preview.body.dataFileId});assert.equal(saved.status,201);
+  const files=(await withToken(request(app).get('/api/data'),owner.token)).body,words=files.find(row=>row.id===preview.body.dataFileId);
+  assert.equal(words.category,'ielts');assert.ok(words.links.some(link=>link.url.startsWith('/english/dictionary')));
+  const reimported=await withToken(request(app).post(`/api/data/${words.id}/reimport`),owner.token);assert.equal(reimported.status,200);assert.equal(reimported.body.entries.length,2);
+  const failed=await withToken(request(app).post('/api/import/preview'),owner.token).attach('file',Buffer.from('没有题号或答案的原始资料，需要重新整理题目结构。'),{filename:'需要修改.txt'});
+  assert.equal(failed.status,422);
+  const retained=(await withToken(request(app).get('/api/data'),owner.token)).body.find(row=>row.name==='需要修改.txt');
+  assert.ok(retained);assert.equal(retained.status,'解析失败');
+  const grant=await withToken(request(app).post(`/api/data/${retained.id}/download`),owner.token);assert.equal(grant.status,200);
+  assert.equal((await request(app).get(grant.body.url)).text,'没有题号或答案的原始资料，需要重新整理题目结构。');
 });
 test('词汇练习不固定八题，按可用词汇随机抽取自定义题量',async()=>{
   const owner=await account('larger-practice');
@@ -115,7 +172,7 @@ test('航班命名草稿持久保存、保留多版本、账号隔离和并发�
   const races=await Promise.all([1,2].map(n=>withToken(request(app).put('/api/flights/drafts/'+id),owner.token).send({...draft,title:'窗口'+n,revision:1})));
   assert.deepEqual(races.map(r=>r.status).sort(),[200,409]);assert.equal((await withToken(request(app).get('/api/flights/drafts/'+id),owner.token)).body.revision,2);
 });
-after(async () => { await store.flush(); fs.rmSync(temporary, { recursive: true, force: true }); });
+after(async () => { await store.flush(); await dataFiles.flush(); fs.rmSync(temporary, { recursive: true, force: true }); });
 
 test('本次错题重练隔离账号、复用未完成试卷并保留删除后的材料快照', async () => {
   const a = await account('retry-a'), b = await account('retry-b');
@@ -347,10 +404,11 @@ test('新密码至少六位，允许长密码，不要求字符组合', async ()
   assert.equal((await login(longName, '长'.repeat(256))).status, 200);
 });
 
-test('改密表单要求至少六位，登录表单仍兼容旧短密码', () => {
+test('移除停用设置表单，登录表单仍兼容旧短密码', () => {
   const script = fs.readFileSync(path.resolve('public/workspace.js'), 'utf8');
   const inputs = [...script.matchAll(/<input\b[^>]*type="password"[^>]*>/g)].map(match => match[0]);
-  assert.ok(inputs.length >= 3);
+  assert.equal(inputs.length, 1);
+  assert.doesNotMatch(script, /async function settings\(/);
   for (const input of inputs) {
     if(input.includes('new-password'))assert.match(input,/minlength="6"/);
     else assert.doesNotMatch(input,/minlength=/);

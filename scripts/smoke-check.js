@@ -19,7 +19,7 @@ const exited = once(child, 'exit');
 const check = (condition, message) => { if (!condition) throw new Error(message); };
 try {
   let health;
-  for (let index = 0; index < 100; index++) {
+  for (let index = 0; index < 400; index++) {
     if (child.exitCode !== null) throw new Error(`服务提前退出：${output.slice(-1500)}`);
     try { const response = await fetch(`${base}/api/health`); if (response.ok) { health = await response.json(); break; } } catch {}
     await new Promise(resolve => setTimeout(resolve, 150));
@@ -28,7 +28,8 @@ try {
   const page = await (await fetch(`${base}/`)).text();
   check(page.includes('/workspace.js') && page.includes('/app.css') && page.includes('href="/banks"') && page.includes('href="/english"') && page.includes('href="/ielts"') && page.includes('href="/corpus"'), '新版界面资源缺失');
   check((await fetch(`${base}/workspace.js`)).ok && (await fetch(`${base}/app.css`)).ok, '界面文件无法加载');
-  for(const asset of ['flight-workbench.js','flight-workbench.css','workbench.css'])check((await fetch(`${base}/${asset}`)).ok,'改版资源无法加载：'+asset);
+  for(const asset of ['flight-workbench.js','browser-uuid.js','flight-workbench.css','workbench.css','standby-calculator.js','standby-workbench.js','standby-workbench.css'])check((await fetch(`${base}/${asset}`)).ok,'改版资源无法加载：'+asset);
+  check((await fetch(`${base}/flights/standby`)).ok&&page.includes('id="toolsMenu"')&&page.includes('id="accountMenu"'),'工具或账号菜单缺失');
   check(page.includes('id="siteHeader"')&&!page.includes('id="sidebar"')&&page.includes('考研英语'),'顶部导航改版未包含在服务中');
   check((await fetch(`${base}/api/banks`)).status === 401, '匿名请求未被拒绝');
   const session = await (await fetch(`${base}/api/account/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'smoke-account', password: 'smoke-private-password' }) })).json();
@@ -42,6 +43,9 @@ try {
   const draftSaved=await fetch(draftUrl,{method:'PUT',headers,body:JSON.stringify({revision:0,title:'隔离草稿检查',data:{flights,start:'2026-10-25',sourceName:'smoke'},pairs,excluded:[],reviewed:[],mode:'season'})});
   check(draftSaved.ok,'航班草稿落盘失败');
   const draftRestored=await (await fetch(draftUrl,{headers})).json();check(draftRestored.revision===1&&draftRestored.pairs?.length===1,'航班草稿恢复失败');
+  const standbySource=await (await fetch(`${base}/api/flights/standby/from-timetable`,{method:'POST',headers,body:JSON.stringify({flights,pairs,mode:'season'})})).json();check(standbySource.duties?.length===1,'时刻表无法送入备份分析');
+  const standbyPayload={duties:standbySource.duties};const standbyReport=await (await fetch(`${base}/api/flights/standby/analyze`,{method:'POST',headers,body:JSON.stringify(standbyPayload)})).json();check(standbyReport.selected?.covered===1&&standbyReport.goal?.achieved&&standbyReport.taskLimits?.turnaround===840&&standbyReport.taskLimits?.layover===540&&standbyReport.proposal.schemes.map(s=>s.shifts.length).join(',')==='4,5,6','全覆盖目标、方案数量或 14／9 小时规则不一致');
+  for(const format of ['xlsx','docx']){const exported=await fetch(`${base}/api/flights/standby/export/${format}`,{method:'POST',headers,body:JSON.stringify(standbyPayload)});check(exported.ok&&(await exported.arrayBuffer()).byteLength>1000,'备份文件导出失败：'+format);}
   const words = await (await fetch(`${base}/api/vocabulary?browse=1&track=english`, { headers })).json();
   check(words.length >= 20, '英语基础词库未加载');
   const starterBanks = await (await fetch(`${base}/api/banks`, { headers })).json();

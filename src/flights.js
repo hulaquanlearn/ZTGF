@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import pdf from 'pdf-parse';
 import ExcelJS from 'exceljs';
 import { flightDraftRouter } from './flight-drafts.js';
+import { standbyRouter, timetableDuties } from './standby.js';
 
 const names = {MFM:'澳门',PEK:'北京首都',SHA:'上海虹桥',PVG:'上海浦东',NKG:'南京',CZX:'常州',TAO:'青岛',HGH:'杭州',NGB:'宁波',WNZ:'温州',XMN:'厦门',FOC:'福州',CTU:'成都双流',CKG:'重庆',KWE:'贵阳',KHH:'高雄',TPE:'台北桃园',RMQ:'台中',BKK:'曼谷素万那普',SIN:'新加坡',KUL:'吉隆坡',HAN:'河内',DAD:'岘港',ICN:'首尔仁川',NRT:'东京成田',KIX:'大阪关西',FUK:'福冈'};
 const zones = {BKK:'Asia/Bangkok',HAN:'Asia/Ho_Chi_Minh',DAD:'Asia/Ho_Chi_Minh',ICN:'Asia/Seoul',NRT:'Asia/Tokyo',KIX:'Asia/Tokyo',FUK:'Asia/Tokyo'};
@@ -55,8 +56,9 @@ export function buildRows({flights,pairs,date,mode='daily'}){
   if(!Array.isArray(flights)||flights.length>1000||!Array.isArray(pairs)||!pairs.length||pairs.length>500)throw new Error('请选择至少一组航班');
   if(mode!=='season')instant(date,'0000','Asia/Shanghai');
   if(new Set(flights.map(f=>f.id)).size!==flights.length)throw new Error('航班记录编号重复');
-  const used=new Set(),groups=[];
+  const used=new Map(),groups=[],pairKeys=new Set();
   for(const p of pairs){
+    const pairKey=JSON.stringify([p.outId,p.backId,p.returnDays]);if(pairKeys.has(pairKey))throw Error('同一日期航班不能重复配对');pairKeys.add(pairKey);
     const out=flights.find(f=>f.id===p.outId),back=flights.find(f=>f.id===p.backId);
     if(!out||!back||out.from!==back.to||out.to!==back.from)throw new Error('去回程机场不匹配');
     for(const f of [out,back]){
@@ -77,7 +79,7 @@ export function buildRows({flights,pairs,date,mode='daily'}){
     for(const day of validDates){
       const returnDate=addDays(day,p.returnDays),a=leg(out,day),b=leg(back,returnDate);
       if(b.dep<a.arr)throw new Error(`${back.number} 离港早于去程到港，请调整回程或过夜天数`);
-      for(const [f,d] of [[out,day],[back,returnDate]]){const key=`${f.number}:${f.from}:${f.to}:${d}`;if(used.has(key))throw new Error('同一日期航班不能重复配对');used.add(key);}
+      for(const [f,d] of [[out,day],[back,returnDate]]){const key=`${f.number}:${f.from}:${f.to}:${d}`;if(used.has(key)&&!(p.alternative===true&&used.get(key)===p.outId))throw new Error('同一日期航班不能重复配对；另一回程方案须人工标记为备选');used.set(key,p.outId);}
       const row=(f,l,isBack)=>[names[out.to]||out.to,out.to,f.number+(isBack&&p.returnDays?`+${p.returnDays}`:''),`${names[f.from]||f.from}→${names[f.to]||f.to}`,f.from,(isBack?p.backOpening:p.outOpening)||'',display(l.dep,day),f.to,display(l.arr,day),mode==='season'?'整季适用日期见配对记录':isBack?returnDate:day,f.days.replaceAll('_',''),f.aircraft,f.start,f.end,p.returnDays?'过夜':'当天往返'];
       const rows=[row(out,a,false),row(back,b,true)],key=JSON.stringify(rows.map(r=>r.slice(0,9)));
       if(!variants.has(key))variants.set(key,{time:a.dep-Date.parse(day),rows,dates:[]});variants.get(key).dates.push(day);
@@ -98,10 +100,12 @@ export async function flightWorkbook(data){
   const arrangements=book.addWorksheet('人工配对记录');arrangements.addRow(headers);rows.forEach(r=>arrangements.addRow(r));arrangements.columns.forEach(c=>c.width=24);arrangements.views=[{state:'frozen',ySplit:1}];
   return book.xlsx.writeBuffer();
 }
-export function flightsRouter(upload){const router=express.Router();
-  router.use('/drafts',flightDraftRouter());
+export function flightsRouter(upload,dataFiles=null){const router=express.Router();
+  router.use('/drafts',flightDraftRouter(undefined,dataFiles));
+  router.use('/standby',standbyRouter(upload));
+  router.post('/standby/from-timetable',(req,res,next)=>{try{res.json(timetableDuties(buildRows(req.body),{nx002Layover:req.body.nx002Layover!==false}));}catch(e){e.status=400;next(e);}});
   router.post('/validate',(req,res,next)=>{try{const accepted=[],issues=[];for(const pair of req.body.pairs||[]){try{buildRows({...req.body,pairs:[...accepted,pair]});accepted.push(pair);}catch(e){issues.push({outId:pair.outId,backId:pair.backId,message:e.message});}}const rows=accepted.length?buildRows({...req.body,pairs:accepted}):[];res.json({issues,accepted,headers:headers.slice(0,9),rows,rowPairs:rows.map(r=>r.pair)});}catch(e){e.status=400;next(e);}});
   router.post('/preview',(req,res,next)=>{try{res.json({headers:headers.slice(0,9),rows:buildRows(req.body).map(r=>r.slice(0,9))});}catch(e){e.status=400;next(e);}});
-  router.post('/extract',upload.single('file'),async(req,res,next)=>{try{if(!req.file||!req.file.originalname.toLowerCase().endsWith('.pdf'))return res.status(400).json({error:'请选择 PDF 文件'});const result=await pdf(await fs.readFile(req.file.path));const decoded=Buffer.from(req.file.originalname,'latin1').toString('utf8');res.json({...parseFlightText(result.text),sourceName:decoded.includes('\ufffd')?req.file.originalname:decoded});}catch(e){e.status=400;next(e);}finally{if(req.file)await fs.unlink(req.file.path).catch(()=>{});}});
+  router.post('/extract',upload.single('file'),async(req,res,next)=>{try{if(!req.file||!req.file.originalname.toLowerCase().endsWith('.pdf'))return res.status(400).json({error:'请选择 PDF 文件'});const result=await pdf(Uint8Array.from(await fs.readFile(req.file.path)));const decoded=Buffer.from(req.file.originalname,'latin1').toString('utf8');res.json({...parseFlightText(result.text),sourceName:decoded.includes('\ufffd')?req.file.originalname:decoded});}catch(e){e.status=400;next(e);}finally{if(req.file)await fs.unlink(req.file.path).catch(()=>{});}});
   router.post('/export',async(req,res,next)=>{try{const bytes=await flightWorkbook(req.body);res.set('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');res.set('Content-Disposition','attachment; filename="flight-timetable.xlsx"');res.send(Buffer.from(bytes));}catch(e){e.status=400;next(e);}});return router;
 }

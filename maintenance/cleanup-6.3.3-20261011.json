@@ -1,0 +1,583 @@
+[
+  {
+    "path": "E:\\workspace\\quizforge\\public\\flights.js",
+    "directory": false,
+    "bytes": 8633,
+    "reason": "Unused legacy frontend; current workbench imports verified",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\public\\flights.css",
+    "directory": false,
+    "bytes": 767,
+    "reason": "Unused legacy frontend; current workbench imports verified",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.0-standby-20261010.zip",
+    "directory": false,
+    "bytes": 276182,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.0-standby-20261010.zip.sha256",
+    "directory": false,
+    "bytes": 103,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.0-standby-deploy.md",
+    "directory": false,
+    "bytes": 6558,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.0-standby-verification.md",
+    "directory": false,
+    "bytes": 3615,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.1-standby-20261011.zip",
+    "directory": false,
+    "bytes": 282234,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.1-standby-20261011.zip.sha256",
+    "directory": false,
+    "bytes": 103,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.1-standby-deploy.md",
+    "directory": false,
+    "bytes": 6876,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.1-standby-verification.md",
+    "directory": false,
+    "bytes": 2416,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.2-standby-20261011.zip",
+    "directory": false,
+    "bytes": 292396,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.2-standby-20261011.zip.sha256",
+    "directory": false,
+    "bytes": 103,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.2-standby-deploy.md",
+    "directory": false,
+    "bytes": 7053,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\releases\\quizforge-6.3.2-standby-verification.md",
+    "directory": false,
+    "bytes": 4690,
+    "reason": "Superseded standby release; latest validated release replaces it",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\flights-6.2.2-20261010",
+    "directory": true,
+    "bytes": 79160869.0,
+    "reason": "Completed isolated test installation or obsolete rendered QA output; no business data or running preview",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\workbench-6.2.3-20261010",
+    "directory": true,
+    "bytes": 79220118.0,
+    "reason": "Completed isolated test installation or obsolete rendered QA output; no business data or running preview",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\workbench-6.2.4-20261010",
+    "directory": true,
+    "bytes": 79223634.0,
+    "reason": "Completed isolated test installation or obsolete rendered QA output; no business data or running preview",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\release-6.3.0-final",
+    "directory": true,
+    "bytes": 76994876.0,
+    "reason": "Completed isolated test installation or obsolete rendered QA output; no business data or running preview",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\release-6.3.1-final",
+    "directory": true,
+    "bytes": 77010284.0,
+    "reason": "Completed isolated test installation or obsolete rendered QA output; no business data or running preview",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\release-6.3.2-final",
+    "directory": true,
+    "bytes": 77038508.0,
+    "reason": "Completed isolated test installation or obsolete rendered QA output; no business data or running preview",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\add-proof.py",
+    "directory": false,
+    "bytes": 919,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\check-new-rule.mjs",
+    "directory": false,
+    "bytes": 1302,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\check-preview-export.mjs",
+    "directory": false,
+    "bytes": 664,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\finalize-rule.py",
+    "directory": false,
+    "bytes": 5209,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\finish-navigation.py",
+    "directory": false,
+    "bytes": 4617,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\fix-autosave-export.py",
+    "directory": false,
+    "bytes": 1537,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\fix-result-context.py",
+    "directory": false,
+    "bytes": 569,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\new-proposal.js",
+    "directory": false,
+    "bytes": 9547,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\polish-final.py",
+    "directory": false,
+    "bytes": 1645,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\polish-workbench.py",
+    "directory": false,
+    "bytes": 3270,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\rebuild-workspace.py",
+    "directory": false,
+    "bytes": 12544,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\revision-edit.mjs",
+    "directory": false,
+    "bytes": 3801,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\revision-final-polish.mjs",
+    "directory": false,
+    "bytes": 971,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\revision-polish.mjs",
+    "directory": false,
+    "bytes": 774,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\revision-separate.mjs",
+    "directory": false,
+    "bytes": 3524,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\revision-version.mjs",
+    "directory": false,
+    "bytes": 1540,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\update-full-exports.py",
+    "directory": false,
+    "bytes": 4674,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\update-min-guide.mjs",
+    "directory": false,
+    "bytes": 3231,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\update-min-rule.mjs",
+    "directory": false,
+    "bytes": 1080,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\update-rule.py",
+    "directory": false,
+    "bytes": 5287,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\validate-source.py",
+    "directory": false,
+    "bytes": 359,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\verify-6.3.2-files.mjs",
+    "directory": false,
+    "bytes": 2435,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\verify-revision-files.mjs",
+    "directory": false,
+    "bytes": 2631,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\render-revision-pdf.py",
+    "directory": false,
+    "bytes": 342,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\render-revision.ps1",
+    "directory": false,
+    "bytes": 755,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-release-6.3.3\\installed",
+    "directory": true,
+    "bytes": 77047117.0,
+    "reason": "Completed isolated test installation or obsolete rendered QA output; no business data or running preview",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-release-6.3.3\\polish.mjs",
+    "directory": false,
+    "bytes": 2894,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-release-6.3.3\\release-docs.mjs",
+    "directory": false,
+    "bytes": 3749,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\revision-word-6.3.3",
+    "directory": true,
+    "bytes": null,
+    "reason": "Completed isolated test installation or obsolete rendered QA output; no business data or running preview",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\actual-file-check-6.3.2.json",
+    "directory": false,
+    "bytes": 313,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\browser-word-final.pdf",
+    "directory": false,
+    "bytes": 186979,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\browser-word.pdf",
+    "directory": false,
+    "bytes": 195203,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\coverage-14-9-final.png",
+    "directory": false,
+    "bytes": 68172,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\final-word-page-1.png",
+    "directory": false,
+    "bytes": 151258,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\final-word-page-2.png",
+    "directory": false,
+    "bytes": 147325,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\final-word-page-3.png",
+    "directory": false,
+    "bytes": 203489,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\mobile-6.3.2.png",
+    "directory": false,
+    "bytes": 7872,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\new-pdf-confirm-6.3.2.png",
+    "directory": false,
+    "bytes": 62919,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\nx658-rejected.jpg",
+    "directory": false,
+    "bytes": 47457,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\original-tab-6.3.3.png",
+    "directory": false,
+    "bytes": 66467,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\report.json",
+    "directory": false,
+    "bytes": 1436115,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\revision-6.3.3.png",
+    "directory": false,
+    "bytes": 80325,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\revision-file-check-6.3.3.json",
+    "directory": false,
+    "bytes": 268,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\revision-word-6.3.3-page-1.png",
+    "directory": false,
+    "bytes": 227642,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\revision-word-6.3.3-page-2.png",
+    "directory": false,
+    "bytes": 237099,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\revision-word-6.3.3-page-3.png",
+    "directory": false,
+    "bytes": 310852,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\revision-word-6.3.3-page-4.png",
+    "directory": false,
+    "bytes": 59217,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\revision-word-6.3.3.pdf",
+    "directory": false,
+    "bytes": 212949,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\rules-final.jpg",
+    "directory": false,
+    "bytes": 101133,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\scheme.docx",
+    "directory": false,
+    "bytes": 12531,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\scheme.xlsx",
+    "directory": false,
+    "bytes": 54816,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-6.3.2-final-page-1.png",
+    "directory": false,
+    "bytes": 188280,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-6.3.2-final-page-2.png",
+    "directory": false,
+    "bytes": 175317,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-6.3.2-final-page-3.png",
+    "directory": false,
+    "bytes": 132704,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-6.3.2-final.pdf",
+    "directory": false,
+    "bytes": 183984,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-6.3.2-page-1.png",
+    "directory": false,
+    "bytes": 193154,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-6.3.2-page-2.png",
+    "directory": false,
+    "bytes": 186180,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-6.3.2-page-3.png",
+    "directory": false,
+    "bytes": 120827,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-6.3.2.pdf",
+    "directory": false,
+    "bytes": 183535,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-page-1.png",
+    "directory": false,
+    "bytes": 150749,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-page-2.png",
+    "directory": false,
+    "bytes": 147371,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-page-3.png",
+    "directory": false,
+    "bytes": 268674,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011\\word-page-4.png",
+    "directory": false,
+    "bytes": 67610,
+    "reason": "Completed one-time edit or obsolete verification output/helper",
+    "result": "recycled"
+  }
+]

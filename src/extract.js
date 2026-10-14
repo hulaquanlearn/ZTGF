@@ -12,7 +12,8 @@ const execFileAsync = promisify(execFile);
 export async function extractText(file) {
   const ext = path.extname(file.originalname).toLowerCase();
   const buffer = await fs.readFile(file.path);
-  if (ext === '.pdf') return cleanDocumentText((await pdf(buffer)).text);
+  // pdf-parse's PDF.js must receive just these bytes, not a Buffer's pooled slab.
+  if (ext === '.pdf') return cleanDocumentText((await pdf(Uint8Array.from(buffer))).text);
   if (ext === '.doc') return extractLegacyDoc(file.path);
   // mammoth只读取正文语义内容，Word页眉中的艺术字/背景水印通常不会混入。
   if (ext === '.docx') return cleanDocumentText((await mammoth.extractRawText({ buffer })).value);

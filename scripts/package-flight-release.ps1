@@ -3,15 +3,16 @@ Set-StrictMode -Version Latest
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $packageVersion = (Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json).version
-if ($packageVersion -ne '6.2.3') { throw 'Expected version 6.2.3' }
+if ($packageVersion -ne '6.3.3') { throw 'Expected version 6.3.3' }
 $outputRoot = Join-Path $projectRoot 'releases'
 New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
-$archivePath = Join-Path $outputRoot 'quizforge-6.2.3-workbench-20261010.zip'
+$archivePath = Join-Path $outputRoot 'quizforge-6.3.3-standby-20261011.zip'
 if (Test-Path -LiteralPath $archivePath) { throw 'Release already exists; do not overwrite.' }
-$files = @('.env.example','.gitignore','package.json','package-lock.json','ecosystem.config.cjs','README.md','WORKBENCH-DEPLOY.md','FLIGHTS-DEPLOY.md','OPENCLAW-DEPLOY.md','PASSWORD-UPDATE-DEPLOY.md','RELEASE-NOTES-v6.0.md','RELEASE-NOTES-v6.1.md','server-content-template.json','test-fixture.md')
+$files = @('.env.example','.gitignore','package.json','package-lock.json','ecosystem.config.cjs','README.md','WORKBENCH-DEPLOY.md','STANDBY-GUIDE.md','FLIGHTS-DEPLOY.md','OPENCLAW-DEPLOY.md','PASSWORD-UPDATE-DEPLOY.md','RELEASE-NOTES-v6.0.md','RELEASE-NOTES-v6.1.md','server-content-template.json','test-fixture.md')
 foreach ($directory in @('public','src','database','docs','scripts')) {
   $files += @(Get-ChildItem -LiteralPath (Join-Path $projectRoot $directory) -Recurse -File | ForEach-Object { [IO.Path]::GetRelativePath($projectRoot,$_.FullName).Replace('\','/') })
 }
+$files = @($files | Where-Object { $_ -notin @('public/flights.js','public/flights.css') -and $_ -notmatch '^docs/standby-verification-6\.3\.[012]\.md$' })
 $manifest = @($files | Sort-Object -Unique | ForEach-Object {
   $source = Join-Path $projectRoot $_
   if (!(Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing file: $_" }
@@ -37,5 +38,5 @@ try {
 } finally { $read.Dispose() }
 $hash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLower()
 [IO.File]::WriteAllText($archivePath+'.sha256',"$hash  $([IO.Path]::GetFileName($archivePath))`n",[Text.UTF8Encoding]::new($false))
-Copy-Item -LiteralPath (Join-Path $projectRoot 'WORKBENCH-DEPLOY.md') -Destination (Join-Path $outputRoot 'quizforge-6.2.3-workbench-deploy.md')
+Copy-Item -LiteralPath (Join-Path $projectRoot 'WORKBENCH-DEPLOY.md') -Destination (Join-Path $outputRoot 'quizforge-6.3.3-standby-deploy.md')
 [PSCustomObject]@{archive=$archivePath;files=$manifest.Count;bytes=(Get-Item -LiteralPath $archivePath).Length;sha256=$hash} | ConvertTo-Json

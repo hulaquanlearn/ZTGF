@@ -4,12 +4,12 @@
 .stat-note{color:var(--muted);font-size:12px}
 .topbar{height:56px}
 .page-heading{margin-bottom:22px}
-.today-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.today-actions .card{display:flex;flex-direction:column;gap:10px;padding:20px}
-.today-actions h2{font-size:18px}
-.today-actions p{color:var(--muted);font-size:13px}
-.today-actions b{color:var(--green);font-size:13px;margin-top:auto}
-.today-actions a:hover{border-color:var(--green)}
+
+
+
+
+
+
 .continue-card{border-left:4px solid var(--green)}
 .summary-line{display:flex;gap:24px;flex-wrap:wrap;color:var(--muted)}
 .summary-line a{color:var(--green)}
@@ -41,8 +41,8 @@ details[open]>summary:before{transform:rotate(90deg)}
 .question{scroll-margin-top:150px}
 button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #176b5780;outline-offset:3px}
 @media(max-width:800px){
-  .today-actions{grid-template-columns:1fr;gap:0}
-  .today-actions .card{padding:16px;margin-bottom:12px;gap:6px}
+
+
   .summary-line{gap:12px;font-size:13px}
   .module-card{padding:10px 8px}
   .module-cards{gap:0}
