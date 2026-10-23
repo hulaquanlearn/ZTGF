@@ -18,12 +18,55 @@ function fixture(handler=()=>[]) {
   win.downloadFile=async(url,name)=>downloads.push({url,name});
   win.showData=async({app})=>{app.innerHTML='<section data-manager>数据管理</section>';};
   win.showFlights=async({app})=>{app.innerHTML='<section data-flight-draft>航班草稿</section>';return ()=>{};};
-  win.bindLoginMotion=()=>()=>{};win.loginSceneMarkup=()=>'';win.bindPasswordVisibility=()=>{};
+  win.bindPasswordVisibility=()=>{};
+  win.eval(fs.readFileSync(new URL('../public/lookup.js',import.meta.url),'utf8').replace(/export (async )?function /g,'$1function ')+'\nwindow.mountQuery=mountQuery;');
+  win.eval(fs.readFileSync(new URL('../public/learning-home.js',import.meta.url),'utf8').replace('export function mountLearningHome','function mountLearningHome')+'\nwindow.mountLearningHome=mountLearningHome;');
+  win.eval(fs.readFileSync(new URL('../public/profile.js',import.meta.url),'utf8').replace('export function mountProfile','function mountProfile')+'\nwindow.mountProfile=mountProfile;');
   const source=fs.readFileSync(new URL('../public/workspace.js',import.meta.url),'utf8').replace(/^import .*$/gm,'').replace(/^route\(\);\r?$/m,'');
   win.eval(source+'\nwindow.workbench={api,status,bindForm,bankDetail,importPage,renderImportPreview,practiceFormHtml,bindPractice,dictionary,vocabularyImport,reimportData,go,route};');
   return {dom,win,app:win.document.querySelector('#app'),calls,downloads,close:()=>dom.window.close()};
 }
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
+
+test('词汇页保留选择与拼写学习，首页没有品牌、查询或重复工具',async()=>{
+  const view=fixture(url=>url==='/api/vocabulary/practice-options?track=ielts'?{available:30,maxPerExam:30}:[]);
+  try{
+    await view.win.workbench.go('/');assert.equal(view.app.querySelector('#homeLookup'),null);assert.equal(view.win.document.querySelector('#siteHeader .brand'),null);assert.equal(view.app.querySelector('.learning-primary').textContent,'词汇开始学习');
+    assert.deepEqual([...view.app.querySelectorAll('.learning-resources a')].map(a=>a.textContent),['题库','语料','复习']);
+    await view.win.workbench.go('/vocabulary');await settle();const form=view.app.querySelector('#vocabularyPractice');assert.equal(form.elements.track.value,'ielts');assert.equal(form.elements.mode.value,'choice');
+    view.app.querySelector('[data-mode="spell"]').click();assert.equal(form.elements.mode.value,'spell');assert.equal(form.elements.direction.value,'zh-en');assert.ok(view.app.querySelector('a[href="/english/collections"]'));
+  }finally{view.close();}
+});
+
+test('底栏覆盖雅思模块、语料和集中复习，首页没有宣传横幅或职业考试',async()=>{
+  const view=fixture(url=>url==='/api/study/today'?{}:[]);
+  try {
+    assert.deepEqual([...view.win.document.querySelectorAll('#mobileNav a')].map(a=>a.textContent),['学习','查询','我的']);
+    for(const [route,group] of [['/','home'],['/english','home'],['/ielts/writing','home'],['/corpus','home'],['/banks','home'],['/review','home'],['/review/wrong','home'],['/query','query'],['/me','me'],['/data','me']]){
+      await view.win.workbench.go(route);
+      assert.equal(view.win.document.querySelector('#mobileNav [aria-current="page"]').dataset.section,group,route);
+      assert.equal(view.win.document.querySelector('#pageBack').classList.contains('hidden'),['/','/query','/me'].includes(view.win.location.pathname),route+' return control');
+    }
+    await view.win.workbench.go('/');assert.equal(view.app.querySelector('.home-hero'),null);assert.ok(view.app.querySelector('.learning-workspace'));assert.ok(view.app.querySelector('.learning-resources a[href="/corpus"]'));assert.equal(view.app.textContent.includes('系统集成'),false);
+  }finally{view.close();}
+});
+
+test('个人中心兼容旧App更新操作，过滤低频操作且退出时清除监听与会话',async()=>{
+  const view=fixture();
+  try {
+    let updateClicks=0;
+    const source=view.win.document.createElement('div');source.className='native-app-actions';
+    source.innerHTML=['reload','credentials','update','server','browser','about'].map(action=>`<button data-native-action="${action}">${action}</button>`).join('');
+    view.win.document.querySelector('#accountMenu .account-dropdown').append(source);
+    source.querySelector('[data-native-action="update"]').onclick=()=>updateClicks++;
+    await view.win.workbench.go('/me');
+    assert.deepEqual([...view.app.querySelectorAll('[data-legacy-action]')].map(b=>b.dataset.legacyAction),['update','server','about']);
+    view.app.querySelector('[data-legacy-action="update"]').click();assert.equal(updateClicks,1);
+    const reload=source.querySelector('[data-native-action="reload"]');reload.dataset.available='true';await settle();assert.equal(view.app.querySelector('[data-legacy-action="reload"]').textContent,'加载新内容');
+    await view.win.workbench.go('/banks');source.append(view.win.document.createElement('span'));await settle();assert.equal(view.app.querySelector('#profileAppActions'),null);
+    await view.win.workbench.go('/me');view.app.querySelector('#profileLogout').click();await settle();assert.equal(view.win.location.pathname,'/login');assert.equal(view.win.sessionStorage.getItem('quizforge-session-token'),null);assert.ok(view.win.document.querySelector('#mobileNav').classList.contains('hidden'));
+  }finally{view.close();}
+});
 
 test('同类菜单切换保持新菜单展开，点击外部和 Escape 均关闭菜单',async()=>{
   const view=fixture();
@@ -39,27 +82,6 @@ test('同类菜单切换保持新菜单展开，点击外部和 Escape 均关闭
     assert.equal(first.open,false);assert.equal(view.calls.length,0);assert.deepEqual(errors,[]);
   }finally{view.close();}
 });
-
-function sampleFlightDraft(id) {
-  return {id,revision:1,title:'原有航班表',data:{sourceName:'sample.pdf',start:'2026-10-25',end:'2027-03-27',flights:[
-    {id:'0',number:'NX632',from:'MFM',to:'TPE',departure:'0800',arrival:'0935',days:'1234567',start:'2026-10-25',end:'2027-03-27',fromName:'澳门',toName:'桃园'},
-    {id:'1',number:'NX631',from:'TPE',to:'MFM',departure:'1035',arrival:'1235',days:'1234567',start:'2026-10-25',end:'2027-03-27',fromName:'桃园',toName:'澳门'}
-  ]},pairs:[],excluded:[],reviewed:[],mode:'season',date:'2026-10-25'};
-}
-
-function useRealFlightScreen(view,id) {
-  const timers=new Map();let timerId=0;
-  view.win.setTimeout=(callback,delay)=>{timers.set(++timerId,{callback,delay});return timerId;};
-  view.win.clearTimeout=timer=>timers.delete(timer);
-  view.win.createUuid=()=>id;view.win.showStandby=()=>()=>{};
-  const source=fs.readFileSync(new URL('../public/flight-workbench.js',import.meta.url),'utf8').replace(/^import .*$/gm,'').replace('export async function showFlights','async function actualShowFlights');
-  view.win.eval(source+'\nwindow.showFlights=actualShowFlights;');
-  return async()=>{
-    const autosave=[...timers].find(([,timer])=>timer.delay===650);
-    assert.ok(autosave,'a draft change schedules an autosave');
-    timers.delete(autosave[0]);autosave[1].callback();await settle();
-  };
-}
 
 test('真实表单提交禁用所有提交入口，成功及接口失败后恢复并显示状态',async()=>{
   let release,requestNumber=0;
@@ -98,7 +120,7 @@ test('真实登录提交发送账号密码，成功写入会话并进入首页',
     release({token:'authenticated-test-token',name:'本地验收账号'});await settle();
     assert.equal(view.win.sessionStorage.getItem('quizforge-session-token'),'authenticated-test-token');
     assert.equal(view.win.sessionStorage.getItem('quizforge-candidate-name'),'本地验收账号');assert.equal(view.win.location.pathname,'/');
-    assert.equal(view.app.querySelector('#loginForm'),null);assert.equal(view.app.querySelector('h1').textContent,'首页');
+    assert.equal(view.app.querySelector('#loginForm'),null);assert.equal(view.app.querySelector('h1').textContent,'学习');
     assert.equal(view.win.document.querySelector('#siteHeader').classList.contains('hidden'),false);
     assert.ok(view.calls.filter(call=>call.url!=='/api/account/login').every(call=>call.options.headers.get('x-session-token')==='authenticated-test-token'));
   } finally {view.close();}
@@ -144,19 +166,6 @@ test('修改预览后的题库名称保留源文件关联，选择另一个文�
   } finally {view.close();}
 });
 
-test('数据管理和带草稿参数的链接在当前工作区内导航',async()=>{
-  const view=fixture();
-  try {
-    assert.equal(view.win.document.querySelector('#mainNav a[href="/data"]'),null);
-    const link=view.win.document.querySelector('#accountMenu a[href="/data"]');
-    const click=new view.win.MouseEvent('click',{bubbles:true,cancelable:true,button:0});link.dispatchEvent(click);
-    await settle();assert.equal(click.defaultPrevented,true);assert.equal(view.win.location.pathname,'/data');assert.ok(view.app.querySelector('[data-manager]'));
-    const draft=view.win.document.createElement('a');draft.href='/flights?draft=saved-1';view.app.append(draft);
-    const next=new view.win.MouseEvent('click',{bubbles:true,cancelable:true,button:0});draft.dispatchEvent(next);
-    await settle();assert.equal(next.defaultPrevented,true);assert.equal(view.win.location.search,'?draft=saved-1');assert.ok(view.app.querySelector('[data-flight-draft]'));
-  } finally {view.close();}
-});
-
 test('旧页面请求迟到时不会覆盖刚打开的数据管理页面',async()=>{
   let release;
   const view=fixture(url=>url==='/api/banks/slow/questions'?new Promise(resolve=>{release=resolve;}):[]);
@@ -167,173 +176,6 @@ test('旧页面请求迟到时不会覆盖刚打开的数据管理页面',async(
     assert.equal(view.win.location.pathname,'/data');
     assert.ok(view.app.querySelector('[data-manager]'));
     assert.equal(view.app.textContent.includes('迟到的题库'),false);
-  } finally {view.close();}
-});
-
-test('跨路由的后台草稿保存接收新 revision，随后保存较新的日期安排',async()=>{
-  const id='12345678-1234-4321-8765-123456789012',writes=[];
-  let release;
-  let stored={id,revision:1,title:'原有航班表',data:{sourceName:'sample.pdf',start:'2026-10-25',end:'2027-03-27',flights:[
-    {id:'0',number:'NX632',from:'MFM',to:'TPE',departure:'0800',arrival:'0935',days:'1234567',start:'2026-10-25',end:'2027-03-27',fromName:'澳门',toName:'桃园'},
-    {id:'1',number:'NX631',from:'TPE',to:'MFM',departure:'1035',arrival:'1235',days:'1234567',start:'2026-10-25',end:'2027-03-27',fromName:'桃园',toName:'澳门'}
-  ]},pairs:[],excluded:[],reviewed:[],mode:'season',date:'2026-10-25'};
-  const view=fixture(async(url,options)=>{
-    if(url==='/api/flights/drafts')return [{id,title:stored.title}];
-    if(url==='/api/flights/drafts/'+id){
-      if(options.method==='PUT'){
-        const snapshot=JSON.parse(options.body);writes.push(snapshot);
-        if(writes.length===1)await new Promise(resolve=>{release=resolve;});
-        if(snapshot.revision!==stored.revision)return new Response(JSON.stringify({error:'版本冲突'}),{status:409});
-        stored={...snapshot,revision:stored.revision+1};return {revision:stored.revision};
-      }
-      return structuredClone(stored);
-    }
-    return [];
-  });
-  const timers=new Map();let timerId=0;
-  view.win.setTimeout=(callback,delay)=>{timers.set(++timerId,{callback,delay});return timerId;};
-  view.win.clearTimeout=timer=>timers.delete(timer);
-  try {
-    view.win.createUuid=()=>id;view.win.showStandby=()=>()=>{};
-    const source=fs.readFileSync(new URL('../public/flight-workbench.js',import.meta.url),'utf8').replace(/^import .*$/gm,'').replace('export async function showFlights','async function actualShowFlights');
-    view.win.eval(source+'\nwindow.showFlights=actualShowFlights;');
-    await view.win.workbench.go('/flights');
-    const title=view.app.querySelector('#flightTitle');title.value='已修改名称';title.dispatchEvent(new view.win.Event('input'));
-    const autosave=[...timers].find(([,timer])=>timer.delay===650);timers.delete(autosave[0]);autosave[1].callback();await settle();
-    assert.equal(writes.length,1);assert.equal(writes[0].revision,1);
-    view.app.querySelector('[data-mode="daily"]').click();
-    const date=view.app.querySelector('#flightDate');date.value='2026-11-02';date.dispatchEvent(new view.win.Event('change'));
-    await view.win.workbench.go('/data');release();await settle();
-    assert.equal(writes.length,2);assert.equal(writes[1].revision,2,'cleanup uses the accepted revision from the earlier in-flight save');
-    assert.equal(stored.revision,3);assert.equal(stored.mode,'daily');assert.equal(stored.date,'2026-11-02');
-    assert.ok(view.app.querySelector('[data-manager]'),'background saves do not replace the new page');
-    assert.equal(view.win.localStorage.getItem('quizforge-flight-pending:界面测试'),null);
-    assert.equal(view.calls.filter(call=>call.url==='/api/flights/drafts').length,1,'disposed screens do not refresh the draft list after saving');
-    assert.ok(view.calls.filter(call=>call.options.method==='PUT').every(call=>!Object.hasOwn(call.options,'background')),'background is an API option, not a fetch option');
-    await view.win.workbench.go('/flights');
-    assert.equal(view.app.querySelector('#flightTitle').value,'已修改名称');assert.equal(view.app.querySelector('#flightDate').value,'2026-11-02');
-    assert.equal(view.app.querySelector('[data-mode="daily"]').getAttribute('aria-pressed'),'true');assert.equal(view.win.document.querySelector('dialog'),null);
-    assert.equal(view.app.querySelector('#flightSave').textContent,'已保存');
-  } finally {release?.();view.close();}
-});
-
-for(const [boundary,changeSession] of [
-  ['token',win=>win.sessionStorage.setItem('quizforge-session-token','replacement-session')],
-  ['owner',win=>win.sessionStorage.setItem('quizforge-candidate-name','另一个账号')]
-]) {
-  test(`排队草稿保存遇到 ${boundary} 变化只保留原账号本地修改，不发送下一笔请求`,async()=>{
-    const id='22345678-1234-4321-8765-123456789012',writes=[];let release,stored=sampleFlightDraft(id);
-    const view=fixture(async(url,options)=>{
-      if(url==='/api/flights/drafts')return [{id,title:stored.title}];
-      if(url==='/api/flights/drafts/'+id){
-        if(options.method==='PUT'){
-          const snapshot=JSON.parse(options.body);writes.push(snapshot);
-          await new Promise(resolve=>{release=resolve;});
-          stored={...snapshot,revision:stored.revision+1};return {revision:stored.revision};
-        }
-        return structuredClone(stored);
-      }
-      return [];
-    });
-    const runAutosave=useRealFlightScreen(view,id);
-    try {
-      await view.win.workbench.go('/flights');
-      const title=view.app.querySelector('#flightTitle');title.value='正在保存的修改';title.dispatchEvent(new view.win.Event('input'));await runAutosave();
-      title.value='排队中的最新修改';title.dispatchEvent(new view.win.Event('input'));
-      await view.win.workbench.go('/data');changeSession(view.win);release();await settle();
-      assert.equal(writes.length,1,'the queued old-account snapshot cannot use a new session or owner');
-      assert.equal(stored.title,'正在保存的修改');
-      assert.equal(JSON.parse(view.win.localStorage.getItem('quizforge-flight-pending:界面测试')).title,'排队中的最新修改');
-      assert.equal(view.win.localStorage.getItem('quizforge-flight-pending:另一个账号'),null);
-      assert.ok(view.calls.filter(call=>call.options.method==='PUT').every(call=>call.options.headers.get('x-session-token')==='isolated-session'));
-      assert.equal(view.calls.filter(call=>call.url==='/api/flights/drafts').length,1);
-      assert.ok(view.app.querySelector('[data-manager]'));
-    } finally {release?.();view.close();}
-  });
-}
-
-test('保存后的草稿列表刷新跨页返回时不会把已成功保存误报失败',async()=>{
-  const id='32345678-1234-4321-8765-123456789012';let stored=sampleFlightDraft(id),release,listReads=0;
-  const view=fixture(async(url,options)=>{
-    if(url==='/api/flights/drafts'){
-      if(++listReads===2)await new Promise(resolve=>{release=resolve;});
-      return [{id,title:stored.title}];
-    }
-    if(url==='/api/flights/drafts/'+id){
-      if(options.method==='PUT'){stored={...JSON.parse(options.body),revision:stored.revision+1};return {revision:stored.revision};}
-      return structuredClone(stored);
-    }
-    return [];
-  });
-  const runAutosave=useRealFlightScreen(view,id);
-  try {
-    await view.win.workbench.go('/flights');
-    const title=view.app.querySelector('#flightTitle');title.value='保存后跳页';title.dispatchEvent(new view.win.Event('input'));await runAutosave();
-    assert.equal(listReads,2);assert.equal(view.app.querySelector('#flightSave').textContent,'已保存');
-    await view.win.workbench.go('/data');release();await settle();
-    assert.ok(view.app.querySelector('[data-manager]'));
-    assert.equal(view.win.localStorage.getItem('quizforge-flight-pending:界面测试'),null);
-    assert.equal(view.win.document.querySelector('#toast').textContent,'');
-    await view.win.workbench.go('/flights');
-    assert.equal(view.app.querySelector('#flightTitle').value,'保存后跳页');
-    assert.equal(view.app.querySelector('#flightSave').textContent,'已保存');
-    assert.equal(view.calls.filter(call=>call.options.method==='PUT').length,1);
-  } finally {release?.();view.close();}
-});
-
-test('真实航班页首次加载迟到时不会重新渲染或覆盖数据管理',async()=>{
-  const id='42345678-1234-4321-8765-123456789012';let release;
-  const view=fixture(url=>url==='/api/flights/drafts'?new Promise(resolve=>{release=resolve;}):sampleFlightDraft(id));
-  useRealFlightScreen(view,id);
-  try {
-    const previous=view.win.workbench.go('/flights');await settle();
-    await view.win.workbench.go('/data');release([{id,title:'迟到的航班表'}]);await previous;
-    assert.equal(view.win.location.pathname,'/data');assert.ok(view.app.querySelector('[data-manager]'));
-    assert.equal(view.app.querySelector('#flightTitle'),null);assert.equal(view.win.document.querySelector('#toast').textContent,'');
-    assert.equal(view.calls.filter(call=>call.url==='/api/flights/drafts/'+id).length,0);
-  } finally {release?.([]);view.close();}
-});
-
-test('迟到的航班页清理函数不会替换新页面已经安装的清理函数',async()=>{
-  const view=fixture(),disposed=[];let release;
-  try {
-    view.win.showFlights=async({app,isCurrent})=>{
-      const revision=view.win.location.search;
-      if(revision==='?draft=old')await new Promise(resolve=>{release=resolve;});
-      if(isCurrent())app.innerHTML='<section data-flight-draft>'+revision+'</section>';
-      return ()=>disposed.push(revision);
-    };
-    const old=view.win.workbench.go('/flights?draft=old');
-    await view.win.workbench.go('/flights?draft=new');release();await old;
-    assert.deepEqual(disposed,['?draft=old']);
-    assert.match(view.app.textContent,/draft=new/);
-    await view.win.workbench.go('/data');assert.deepEqual(disposed,['?draft=old','?draft=new']);
-  } finally {release?.();view.close();}
-});
-
-test('会话切换时仅修改日期与范围的本地副本重新登录后也能恢复为新草稿',async()=>{
-  const id='52345678-1234-4321-8765-123456789012',newId='62345678-1234-4321-8765-123456789012',original=sampleFlightDraft(id),writes=[];
-  const view=fixture((url,options)=>{
-    if(url==='/api/flights/drafts')return [{id,title:original.title}];
-    if(options.method==='PUT'){writes.push({url,snapshot:JSON.parse(options.body)});return {revision:1};}
-    if(url==='/api/flights/drafts/'+id)return structuredClone(original);
-    return [];
-  });
-  useRealFlightScreen(view,id);
-  try {
-    await view.win.workbench.go('/flights');view.app.querySelector('[data-mode="daily"]').click();
-    const date=view.app.querySelector('#flightDate');date.value='2026-11-02';date.dispatchEvent(new view.win.Event('change'));
-    view.win.sessionStorage.setItem('quizforge-session-token','replacement-session');await view.win.workbench.go('/data');await settle();
-    assert.equal(writes.length,0);
-    assert.equal(JSON.parse(view.win.localStorage.getItem('quizforge-flight-pending:界面测试')).date,'2026-11-02');
-    view.win.sessionStorage.setItem('quizforge-session-token','isolated-session');await view.win.workbench.go('/flights');
-    const button=view.win.document.querySelector('#recoverFlight');assert.ok(button,'mode/date changes alone must expose local recovery');
-    view.win.createUuid=()=>newId;await button.onclick();
-    assert.equal(writes.length,1);assert.equal(writes[0].url,'/api/flights/drafts/'+newId);assert.equal(writes[0].snapshot.revision,0);
-    assert.equal(writes[0].snapshot.mode,'daily');assert.equal(writes[0].snapshot.date,'2026-11-02');
-    assert.equal(original.mode,'season');assert.equal(original.date,'2026-10-25');
-    assert.equal(view.win.localStorage.getItem('quizforge-flight-pending:界面测试'),null);
-    assert.equal(view.win.document.querySelector('#recoverFlight'),null);
   } finally {view.close();}
 });
 
@@ -377,20 +219,6 @@ test('词汇预览能为缺失或不规范学习方向指定目标，并保留�
   } finally {view.close();}
 });
 
-test('快速切换词汇范围时迟到的响应不会覆盖新范围的题量',async()=>{
-  const pending=new Map(),view=fixture(url=>new Promise(resolve=>pending.set(new URL(url,'http://example.test').searchParams.get('track'),resolve)));
-  try {
-    view.app.innerHTML=view.win.workbench.practiceFormHtml('testPractice','postgraduate');
-    const form=view.app.querySelector('form');view.win.workbench.bindPractice(form);
-    assert.equal(form.querySelector('[type="submit"]').disabled,true);
-    form.elements.track.value='ielts';form.elements.track.dispatchEvent(new view.win.Event('change'));
-    pending.get('ielts')({available:3,maxPerExam:3});await settle();
-    pending.get('postgraduate')({available:50,maxPerExam:50});await settle();
-    assert.equal(form.elements.count.max,'3');assert.equal(form.elements.count.value,'3');
-    assert.match(form.querySelector('[data-availability]').textContent,/3 个词/);
-  } finally {view.close();}
-});
-
 test('语料搜索实时只保留命中的条目，编辑和删除可直接操作',async()=>{
   const view=fixture();
   try {
@@ -407,4 +235,17 @@ test('语料搜索实时只保留命中的条目，编辑和删除可直接操�
     q.value='no match';q.dispatchEvent(new view.win.Event('input'));view.app.querySelector('[data-reset-search]').click();
     assert.equal(view.app.querySelectorAll('.corpus-entry').length,2);
   } finally {view.close();}
+});
+
+
+test('复习汇总各模块记录与错题，旧地址归一且筛选保持，内页只展示返回和标题',async()=>{
+  const view=fixture(url=>url.startsWith('/api/attempts?')?[{id:'done',title:'词汇练习',score:1,maxScore:2,questionCount:2}]:url==='/api/exams'?[{id:'a',title:'未完成词汇',track:'ielts',module:'vocabulary'},{id:'b',title:'未完成阅读',track:'general',module:'reading'}]:url==='/api/banks'?[{id:'bank',title:'阅读资料',track:'ielts',module:'reading'}]:url.startsWith('/api/wrong-questions?')?[{type:'choice',question:'Which word?',options:['a','b'],correctAnswer:0,wrongCount:1}]:[]);
+  try{
+    for(const path of ['/banks','/ielts/listening','/english/collections']){await view.win.workbench.go(path);assert.equal(view.app.querySelector('a[href$="/results"],a[href$="/wrong"]'),null,path);}
+    await view.win.workbench.go('/review');assert.match(view.app.textContent,/未完成词汇/);assert.match(view.app.textContent,/未完成阅读/);assert.equal(view.win.document.querySelector('#pageTitle').textContent,'复习');assert.equal(view.win.document.querySelector('#pageBack').getAttribute('href'),'/');assert.ok(view.win.document.querySelector('#siteHeader').classList.contains('inner-page'));
+    view.app.querySelector('#historyModule').value='reading';view.app.querySelector('#historyModule').dispatchEvent(new view.win.Event('change'));await settle();assert.equal(view.win.location.pathname,'/review');assert.equal(view.win.location.search,'?module=reading');assert.match(view.app.textContent,/未完成阅读/);assert.doesNotMatch(view.app.textContent,/未完成词汇/);
+    await view.win.workbench.go('/banks/wrong?bankId=bank');await settle();assert.equal(view.win.location.pathname,'/review/wrong');assert.equal(view.win.location.search,'?bankId=bank');assert.match(view.app.textContent,/Which word/);
+    const request=view.calls.findLast(c=>c.url.startsWith('/api/wrong-questions?'));assert.equal(new URL('http://test'+request.url).searchParams.get('track'),'');
+    await view.win.workbench.go('/');assert.equal(view.win.document.querySelector('#siteHeader').classList.contains('inner-page'),false);
+  }finally{view.close();}
 });

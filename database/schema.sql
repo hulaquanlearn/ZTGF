@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 CREATE TABLE IF NOT EXISTS users (
   id CHAR(36) NOT NULL PRIMARY KEY,
   username VARCHAR(60) NOT NULL,
+  display_name VARCHAR(60) NULL,
   username_key VARCHAR(60) NOT NULL,
   role ENUM('admin','user') NOT NULL DEFAULT 'user',
   status ENUM('active','disabled') NOT NULL DEFAULT 'active',

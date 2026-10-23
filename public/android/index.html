@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#176b57">
+  <title>雅思工坊 · 安卓 App</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f4f8f5;color:#213d32;font:16px/1.7 system-ui,sans-serif;padding:32px 20px}main{max-width:520px;margin:5vh auto;background:white;border:1px solid #dbe8df;border-radius:24px;padding:32px}img{display:block;width:72px;height:72px;border-radius:18px;background:#176b57;padding:12px}h1{font-size:28px;margin:20px 0 8px}p{color:#5d7668;margin:12px 0}.button{display:block;text-align:center;background:#176b57;color:white;padding:14px 18px;border-radius:12px;text-decoration:none;margin:24px 0 12px;font-weight:600;min-height:48px}[hidden]{display:none}.address{display:block;overflow-wrap:anywhere;background:#eef5f0;padding:12px;border-radius:10px;font-family:monospace;color:#176b57}small{color:#5d7668}a{color:#176b57}button{font:inherit;border:1px solid #c9dace;border-radius:10px;background:white;color:#176b57;padding:10px 16px;min-height:44px;cursor:pointer}#status{font-size:14px}@media(max-width:400px){main{padding:24px;margin-top:16px}}
+  </style>
+</head>
+<body>
+  <main>
+    <img src="/android/icon.svg" alt="雅思工坊图标">
+    <h1>把学习空间装进口袋</h1>
+    <p>雅思工坊安卓 App，使用原有账号即可打开雅思词汇、听说读写与语料库。</p>
+    <p id="version">正在检查安装包…</p>
+    <a id="download" class="button" hidden>下载安卓安装包</a>
+    <p id="status" role="status" aria-live="polite"></p>
+    <p>支持 Android 8.0 及以上。下载后打开 APK，按手机提示允许本次安装。</p>
+    <p>新安装默认连接当前服务；需要更换地址时，在“我的 → 服务器地址”中修改：</p>
+    <code id="address" class="address"></code>
+    <p><button id="copy" type="button">复制服务器地址</button></p>
+    <p>安装包更新在登录后的“我的 → 应用更新”中操作；发现新版会提示“立即更新／稍后”。登录页只保留账号与密码；无法连接时仍可在错误页恢复服务器地址。检测到网页新版时，“我的”里会出现“加载新内容”。</p>
+    <p>登录页勾选“保存密码”，登录成功后在本机加密保存，下次自动填入；取消勾选即可清除。</p>
+    <small>需要联网使用。安装包升级由安卓系统确认；不会在后台强制安装。</small>
+    <p><a href="/">返回网页版</a></p>
+  </main>
+  <script type="module" src="/android/install.js"></script>
+</body>
+</html>

@@ -16,9 +16,11 @@ import { seedVocabulary } from './seed-vocabulary.js';
 import { seedStudyBanks } from './seed-study.js';
 import { jobQueue } from './job-queue.js';
 import { corpusRouter } from './corpus.js';
+import { lookupRouter } from './lookup.js';
 import { createDataFiles, trackedUploads, managedExports } from './data-files.js';
 import { flightsRouter } from './flights.js';
 import { cleanupExpiredUploads, cleanupExpiredFlightTrash } from './upload-cleanup.js';
+import { createAppVersionHandler } from './app-version.js';
 
 export const app = express();
 const TRACKS = {
@@ -50,7 +52,10 @@ await store.flush();
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '5mb' }));
-app.use(express.static(path.resolve('public')));
+app.get('/api/app-version', await createAppVersionHandler(path.resolve('public')));
+app.use(express.static(path.resolve('public'), { setHeaders: (res, file) => {
+  if (/\.(?:html|js|css|json)$/.test(file)) res.set('Cache-Control', 'no-cache');
+} }));
 app.get('/downloads/:ticket',dataFiles.serve);
 app.get('/api/health', (_req, res) => res.json({ ok: true, database: store.storageMode(), schema: 'relational-v6', version: '6.3.3', identityMode: 'standalone', accountMode: 'unified', accountConfigured: store.listCandidates().length > 0, gradingMode: 'deterministic-only', translationConfigured: translationConfigured(), translationProvider: translationConfigured() ? String(process.env.TRANSLATION_PROVIDER).toLowerCase() : 'none' }));
 // Retired privileged routes never become shortcuts around account ownership.
@@ -65,7 +70,7 @@ app.post(['/api/account/login', '/api/session/login'], asyncRoute(async (req, re
   store.ensureStarterBanks(auth.candidate.id, seedStudyBanks);
   const token = createSession(auth.candidate);
   await store.flush();
-  res.json({ ok: true, id: auth.candidate.id, name: auth.candidate.name, token });
+  res.json({ ok: true, id: auth.candidate.id, name: accountDisplayName(auth.candidate), username: auth.candidate.name, token });
 }));
 app.post(['/api/account/logout', '/api/session/logout'], asyncRoute(async (req, res) => { store.revokeSession(sessionToken(req)); await store.flush(); res.json({ ok: true }); }));
 app.use('/api', asyncRoute(async (req, res, next) => {
@@ -74,8 +79,9 @@ app.use('/api', asyncRoute(async (req, res, next) => {
   if (!candidate || candidate.status === 'disabled') return res.status(401).json({ error: '请先登录' });
   req.account = candidate; next();
 }));
-app.get('/api/account/me', (req, res) => res.json({ id: req.account.id, name: req.account.name }));
-app.post('/api/candidate/session', (req, res) => res.json({ ok: true, name: req.account.name }));
+app.get('/api/account/me', (req, res) => res.json({ id: req.account.id, name: accountDisplayName(req.account), username: req.account.name }));
+app.use('/api/lookup',lookupRouter(store));
+app.post('/api/candidate/session', (req, res) => res.json({ ok: true, name: accountDisplayName(req.account) }));
 app.post('/api/account/password', asyncRoute(async (req, res) => {
   if (!store.authenticateCandidate(req.account.name, req.body.currentPassword, false).ok) return res.status(400).json({ error: '当前密码不正确' });
   const password = String(req.body.newPassword || '');
@@ -136,7 +142,7 @@ app.post(['/api/import/preview', '/api/user/preview'], upload.single('file'), as
     if (req.body.mode === 'generate') {
       if (!process.env.DB_HOST || !process.env.DB_NAME || !process.env.DB_USER) return res.status(503).json({ error: '文档自动出题需要配置数据库和后台任务服务，当前可提取文件中的现有题目' });
       const count = integer(req.body.count ?? 20, 1, 100); if (!count) return res.status(400).json({ error: '自动出题数量需要为1至100的整数' });
-      const queued = await jobQueue.enqueueGeneration({ ownerId: req.account.id, ownerName: req.account.name, sourceName, sourceText, byteSize: req.file.size, mimeType: req.file.mimetype, options: { ...metadata, count, difficulty: ['easy', 'medium', 'hard'].includes(req.body.difficulty) ? req.body.difficulty : 'medium' } });
+      const queued = await jobQueue.enqueueGeneration({ ownerId: req.account.id, ownerName: accountDisplayName(req.account), sourceName, sourceText, byteSize: req.file.size, mimeType: req.file.mimetype, options: { ...metadata, count, difficulty: ['easy', 'medium', 'hard'].includes(req.body.difficulty) ? req.body.difficulty : 'medium' } });
       return res.status(202).json({ ...metadata, ...queued, status: 'queued', mode: 'generate' });
     }
     const parsed = parseExistingQuestions(sourceText);
@@ -210,7 +216,7 @@ app.post('/api/attempts/:id/retry', asyncRoute(async (req, res) => {
 }));
 app.get('/api/attempts/:id/export', asyncRoute(async (req, res) => { const row = store.getAttemptForCandidate(req.params.id, req.account.id); if (!row) return res.status(404).json({ error: '答题记录不存在' }); sendDocx(res, await attemptDocx(row, req.query.wrongOnly === '1'), req.query.wrongOnly === '1' ? 'wrong-questions.docx' : 'attempt.docx'); }));
 app.get('/api/wrong-questions', (req, res) => res.json(store.aggregateWrongQuestions(req.account.id,studyFilters(req.query))));
-app.get('/api/wrong-questions/export', asyncRoute(async (req, res) => sendDocx(res, await wrongQuestionsDocx(req.account.name, store.aggregateWrongQuestions(req.account.id,studyFilters(req.query))), 'wrong-book.docx')));
+app.get('/api/wrong-questions/export', asyncRoute(async (req, res) => sendDocx(res, await wrongQuestionsDocx(accountDisplayName(req.account), store.aggregateWrongQuestions(req.account.id,studyFilters(req.query))), 'wrong-book.docx')));
 app.post('/api/wrong-exam', asyncRoute(async (req, res) => {
   const filters=studyFilters(req.body),pool = store.buildWrongExam(req.account.id,filters); if (!pool.length) return res.status(400).json({ error: '暂无错题' });
   const count = integer(req.body.count ?? Math.min(20, pool.length), 1, pool.length); if (!count) return res.status(400).json({ error: `错题数量需要为1至${pool.length}的整数` });
@@ -289,7 +295,7 @@ app.post('/api/translate', asyncRoute(async (req, res) => {
   const detected = detectLanguage(value), resolved = source === 'auto' ? detected : source;
   const targets = [...new Set(Array.isArray(req.body.targets) ? req.body.targets : [])].filter(code => ['zh', 'en'].includes(code) && code !== resolved); if (!targets.length) targets.push(resolved === 'en' ? 'zh' : 'en');
   const track = inputTrack(req.body.track); if (!track) return res.status(400).json({ error: '学习方向无效' });
-  const metadata = { candidateId: req.account.id, candidateName: req.account.name, text: value, sourceRequested: source, source: resolved, track };
+  const metadata = { candidateId: req.account.id, candidateName: accountDisplayName(req.account), text: value, sourceRequested: source, source: resolved, track };
   const exact = store.findVocabularyExact(value, req.account.id); let row, cached = false;
   if (exact && targets.every(code => exact[code])) row = store.addTranslation({ ...metadata, targets, translations: Object.fromEntries(targets.map(code => [code, exact[code]])), provider: 'local' });
   else {
@@ -305,7 +311,7 @@ app.post('/api/translate', asyncRoute(async (req, res) => {
 app.get('/api/translations', (req, res) => res.json(store.listTranslations(req.account.id)));
 app.use('/api', (_req, res) => res.status(404).json({ error: '接口不存在' }));
 // History routes: refresh/direct links return the shell, never unknown APIs or files.
-app.get(/^\/(?:login|data|banks(?:\/(?:results|wrong))?|bank\/[^/]+|import(?:\/[^/]+){0,2}|build\/[^/]+|exam\/[^/]+|attempt\/[^/]+|results|wrong|english(?:\/[^/]+)?|ielts(?:\/[^/]+)?|corpus(?:\/[^/]+)?|flights(?:\/standby)?|settings)\/?$/, (_req,res)=>res.sendFile(path.resolve('public/index.html')));
+app.get(/^\/(?:login|query|vocabulary|me|review(?:\/wrong)?|data|banks(?:\/(?:results|wrong))?|bank\/[^/]+|import(?:\/[^/]+){0,2}|build\/[^/]+|exam\/[^/]+|attempt\/[^/]+|results|wrong|english(?:\/[^/]+)?|ielts(?:\/[^/]+)?|corpus(?:\/[^/]+)?|flights(?:\/standby)?|settings)\/?$/, (_req,res)=>res.set('Cache-Control','no-cache').sendFile(path.resolve('public/index.html')));
 app.use((error, _req, res, _next) => { const status = error instanceof multer.MulterError ? 400 : Number(error.status) || 500; if (status >= 500) console.error(error); res.status(status).json({ error: error.message || '服务器错误' }); });
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const host = process.env.HOST || '0.0.0.0', port = Number(process.env.PORT || 3080);
@@ -327,13 +333,14 @@ function studyFilters(value){const track=optionalTrack(value.track);if(value.tra
 function inputTrack(value) { return text(value, 100) ? optionalTrack(value) : 'general'; }
 function integer(value, min, max) { const number = Number(value); return Number.isInteger(number) && number >= min && number <= max ? number : null; }
 function sessionToken(req) { return String(req.get('x-session-token') || ''); }
-function createSession(account) { return store.createSession({ role: 'user', userId: account.id, name: account.name, hours: Number(process.env.SESSION_HOURS || 12) }); }
+function accountDisplayName(account) { return account.displayName || account.name; }
+function createSession(account) { return store.createSession({ role: 'user', userId: account.id, name: accountDisplayName(account), hours: Number(process.env.SESSION_HOURS || 12) }); }
 function ownedBank(req, res) { const bank = store.getOwnedQuiz(req.params.id, req.account.id); if (!bank) res.status(404).json({ error: '题库不存在' }); return bank; }
 function ownedExam(req, res) { const exam = store.getExamForCandidate(req.params.id, req.account.id); if (!exam) res.status(404).json({ error: '试卷不存在' }); return exam; }
 function countTypes(questions = []) { return questions.reduce((out, q) => ({ ...out, [q.type]: (out[q.type] || 0) + 1 }), {}); }
 function bankSummary(bank) { const counts = bank.typeCounts || countTypes(bank.questions); return { id: bank.id, title: bank.title, track: bank.track || 'general', category: bank.category || '', module: bank.module || 'general', course: bank.course || '', unit: bank.unit || '', year: bank.year || '', difficulty: bank.difficulty || 'mixed', sourceName: bank.sourceName || '', source_name: bank.sourceName || '', createdAt: bank.createdAt, created_at: bank.createdAt, updatedAt: bank.updatedAt || bank.createdAt, typeCounts: counts, questionCount: Object.values(counts).reduce((sum, count) => sum + count, 0), groupCount: bank.groupCount || new Set((bank.questions || []).map(q => q.groupId).filter(Boolean)).size, visibility: 'private' }; }
 function bankMetadata(input) { const title = text(input.title, 200), track = inputTrack(input.track); if (!title) return { error: '请填写题库名称' }; if (!track) return { error: '学习方向无效' }; return { title, track, category: text(input.category ?? input.course, 100), module: text(input.module, 100) || 'general', course: text(input.course, 100), unit: text(input.unit, 100), year: text(input.year, 100), difficulty: text(input.difficulty, 100) || 'mixed' }; }
-function saveBank(account, metadata, questions, sourceName = '') { const bank = { id: crypto.randomUUID(), ...metadata, questions, sourceName, sourceText: '', status: 'published', visibility: 'private', ownerId: account.id, ownerName: account.name, createdAt: new Date().toISOString() }; store.addQuiz(bank); return bank; }
+function saveBank(account, metadata, questions, sourceName = '') { const bank = { id: crypto.randomUUID(), ...metadata, questions, sourceName, sourceText: '', status: 'published', visibility: 'private', ownerId: account.id, ownerName: accountDisplayName(account), createdAt: new Date().toISOString() }; store.addQuiz(bank); return bank; }
 function decodeFilename(name) { const decoded = Buffer.from(name, 'latin1').toString('utf8'); return /[\u4e00-\u9fff]/.test(decoded) && !/[\u4e00-\u9fff]/.test(name) ? decoded : name; }
 function validateQuestions(input, { allowEmpty = false } = {}) {
   if (!Array.isArray(input) || (!allowEmpty && !input.length) || input.length > 10000) return { error: '请提供有效题目，单次最多10000道' };
@@ -369,7 +376,7 @@ function allocatePoints(questions) {
   for (let index = 0; index < remaining; index++) cents[order[index].index]++;
   questions.forEach((q, index) => { q.points = cents[index] / 100; });
 }
-function saveExam(account, fields) { const exam = { id: crypto.randomUUID(), bankId: null, candidateId: account.id, candidateName: account.name, track: 'general', module: 'general', blueprint: {}, draftAnswers: {}, ...fields, createdAt: new Date().toISOString() }; store.addExam(exam); return exam; }
+function saveExam(account, fields) { const exam = { id: crypto.randomUUID(), bankId: null, candidateId: account.id, candidateName: accountDisplayName(account), track: 'general', module: 'general', blueprint: {}, draftAnswers: {}, ...fields, createdAt: new Date().toISOString() }; store.addExam(exam); return exam; }
 function examSummary(exam) { return { id: exam.id, title: exam.title, questionCount: exam.questions.length, blueprint: exam.blueprint, createdAt: exam.createdAt }; }
 function sanitizeAnswers(input, count) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null; const answers = {};
@@ -394,7 +401,7 @@ function gradeAndSave(exam, account, answers) {
   });
   const score = Math.round(results.reduce((sum, row) => sum + row.score, 0) * 100) / 100, maxScore = Math.round(results.reduce((sum, row) => sum + row.maxPoints, 0) * 100) / 100, attemptId = crypto.randomUUID();
   const questions = exam.questions.map(q => ({ type: q.type, question: q.question, options: q.options || [], blanks: q.blanks || [], groupId: q.groupId || '', materialTitle: q.materialTitle || '', materialText: q.materialText || '', points: q.points, wordId: q.wordId || null, language: q.language || null }));
-  store.addAttempt({ id: attemptId, title: exam.title, quizId: exam.bankId, examId: exam.id, candidateId: account.id, candidateName: account.name, track: exam.track || 'general', module: exam.module || 'general', answers, results, questions, score, maxScore, createdAt: new Date().toISOString() });
+  store.addAttempt({ id: attemptId, title: exam.title, quizId: exam.bankId, examId: exam.id, candidateId: account.id, candidateName: accountDisplayName(account), track: exam.track || 'general', module: exam.module || 'general', answers, results, questions, score, maxScore, createdAt: new Date().toISOString() });
   exam.questions.forEach((q, index) => { if (q.wordId && store.getVocabulary(q.wordId, account.id)) store.recordWordResult(account.id, q.wordId, results[index].score === results[index].maxPoints); }); store.completeExam(exam.id);
   return { attemptId, score, maxScore, percentage: maxScore ? Math.round(score / maxScore * 1000) / 10 : 0, results };
 }

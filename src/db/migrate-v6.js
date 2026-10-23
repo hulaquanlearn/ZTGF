@@ -3,6 +3,7 @@
 export async function migrateV6(pool) {
   const additions = [
     ['users','starter_initialized','TINYINT(1) NOT NULL DEFAULT 0'],
+    ['users','display_name','VARCHAR(60) NULL'],
     ['question_banks','category_name',"VARCHAR(100) NOT NULL DEFAULT ''"],
     ['exams','draft_answers_json','JSON NULL'],
     ['vocabulary_entries','owner_id','CHAR(36) NULL']

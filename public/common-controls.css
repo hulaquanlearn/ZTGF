@@ -5,20 +5,20 @@
 .card-heading>div>.meta,.data-info>h3+.meta{margin-top:6px}
 .dialog-body .corpus-text{margin-top:10px}
 .bank-info h3,.corpus-entry-heading h3{line-height:1.6}
-.standby-quantity{min-width:0}
-.standby-count-choice{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
-.standby-count-choice .standby-count-field{width:auto;margin:0}
-.standby-count-choice select{width:124px;margin:0}
-.standby-count-mode{width:auto}
-.standby-plan .standby-quantity{margin:0 24px 24px;padding-top:20px;border-top:1px solid var(--border)}
-.standby-count-choice .standby-count-mode{width:auto}
-.standby-scheme-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
-.standby-scheme-choices button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:14px 18px;min-height:76px;white-space:normal}
-.standby-scheme-choices button span{font-size:12px;font-weight:400;color:var(--muted)}
-.standby-scheme-choices button[aria-pressed=true]{border-color:var(--primary);background:#e9f3ed;color:var(--primary)}
-.standby-edit-hint{margin-top:14px;line-height:1.7}
-@media(max-width:640px){.standby-plan .standby-quantity{margin:0 16px 20px}.standby-scheme-choices{gap:8px}.standby-scheme-choices button{padding:12px 10px;font-size:13px}.standby-count-choice .standby-count-mode button{padding:8px 12px}}
-@media(max-width:640px){.standby-count-mode{flex:1}.standby-count-mode button{white-space:nowrap}.standby-count-choice{gap:8px}.standby-count-choice select{width:98px}}
+
+
+
+
+
+
+
+
+
+
+
+
+@media(max-width:640px){}
+@media(max-width:640px){}
 .account-dropdown #accountDataLink{display:flex;align-items:center;min-height:44px;margin-top:16px;padding:10px 12px;border-top:1px solid var(--control-border);border-radius:8px;color:var(--ink);font-size:13px;font-weight:500}
 .account-dropdown #accountDataLink:hover,.account-dropdown #accountDataLink[aria-current=page]{background:#edf5f0;color:var(--primary)}
 .account-dropdown #logoutButton{min-height:44px;margin-top:4px;padding:10px 12px;border:0;border-radius:8px;background:transparent}
@@ -26,22 +26,20 @@
 .data-trash-actions h2{font-size:16px}
 .data-trash-actions button,.data-actions [data-purge]{min-height:44px;color:#ad4d53;font-size:13px}
 .study-switcher{grid-template-columns:repeat(var(--switch-count,4),minmax(0,1fr))}
-.study-switcher--three{--switch-count:3;width:336px}
-.study-utility-links .study-import{border:1px solid var(--control-border);background:#fff;color:var(--primary);margin-left:8px}
-.module-nav{display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;padding:4px;margin-bottom:24px;border:1px solid var(--control-border);border-radius:14px;background:var(--control-tint);width:fit-content;max-width:100%}
-.module-nav a{display:inline-flex;align-items:center;justify-content:center;min-height:var(--control-height);padding:8px 16px;border:0;border-radius:var(--control-radius);background:transparent;color:#5e786a;font-size:14px;box-shadow:none}
-.module-nav a:hover{background:#ffffff8c;color:var(--primary)}
-.module-nav a.active,.module-nav a.active:hover{background:var(--primary);color:#fff;box-shadow:0 2px 5px #176b5717}
-.flight-mode,.standby-result-filter{display:inline-flex;flex-wrap:wrap;align-items:stretch;gap:4px;padding:4px;border:1px solid var(--control-border);border-radius:14px;background:var(--control-tint)}
-.flight-mode button,.standby-result-filter button{display:inline-flex;align-items:center;justify-content:center;min-height:var(--control-height);padding:8px 16px;border:0;border-radius:var(--control-radius);background:transparent;color:#5e786a;font-size:13px;font-weight:550;box-shadow:none}
-.flight-mode button:hover,.standby-result-filter button:hover{background:#ffffff8c;color:var(--primary)}
-.flight-mode button[aria-pressed=true],.standby-result-filter button[aria-pressed=true]{background:var(--primary);color:#fff;box-shadow:0 2px 5px #176b5717}
-.flight-progress{display:flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--control-border);border-radius:14px;background:var(--control-tint)}
-.flight-progress:empty{display:none}
-.flight-progress .progress-item{display:flex;flex:1 1 120px;align-items:center;justify-content:space-between;gap:12px;min-height:var(--control-height);padding:8px 14px;border:0;border-radius:var(--control-radius);background:transparent;color:#5e786a;font-size:13px;box-shadow:none}
-.flight-progress .progress-item b{font-size:14px;color:inherit;line-height:1.3}
-.flight-progress .progress-item:hover{background:#ffffff8c;color:var(--primary)}
-.flight-progress .progress-item[aria-pressed=true]{background:var(--primary);color:#fff}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .data-categories{gap:4px;padding:4px;border:1px solid var(--control-border);border-radius:14px;background:var(--control-tint)}
 .data-categories button{min-height:var(--control-height);padding:8px 12px;border:0;border-radius:var(--control-radius);background:transparent;color:#5e786a;font-size:13px;font-weight:550;box-shadow:none}
 .data-categories button:hover,.data-categories button:not([aria-pressed=true]):hover{background:#ffffff8c;color:var(--primary)}
@@ -49,7 +47,7 @@
 .data-categories button[aria-pressed=true] span{color:#ffffffc9}
 .data-categories #dataTrash{margin-top:6px;padding-top:8px;border:0;border-radius:var(--control-radius)}
 .filter-bar,.scope-filter{align-items:center;gap:12px;padding:14px 16px;background:#fff;border:1px solid var(--control-border);border-radius:14px}
-.filter-bar input,.filter-bar select,.scope-filter input,.scope-filter select,.flight-filters input,.flight-filters select,#corpusSearch input{min-height:var(--control-height);border-radius:var(--control-radius)}
+.filter-bar input,.filter-bar select,.scope-filter input,.scope-filter select,#corpusSearch input{min-height:var(--control-height);border-radius:var(--control-radius)}
 .scope-filter .meta{margin-bottom:0}
 #corpusSearch{display:flex;align-items:center;gap:12px;margin:0 0 18px;padding:0;border:0}
 #corpusSearch input{width:100%;margin:0}
@@ -67,15 +65,12 @@
 :is(.row-menu,.export-menu)>:is(div,.actions)>button.danger,:is(.row-menu,.export-menu)>:is(div,.actions)>button[data-delete]{color:#ad4d53}
 :is(.row-menu,.export-menu)>summary:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 @media(max-width:640px){
-  .study-switcher--three{width:100%}
-  .study-utility-links{width:100%;justify-content:flex-end}
-  .study-utility-links .study-import{margin-left:4px}
   .filter-bar,.scope-filter{gap:8px;padding:12px}
   .scope-filter label{min-width:0;flex:1}
-  .flight-mode{width:100%}
-  .flight-mode button{flex:1;min-width:0}
-  .flight-progress .progress-item{flex-basis:calc(50% - 4px)}
-  .standby-result-filter button{min-width:76px}
+
+
+
+
   .data-categories{align-items:stretch}
   .data-categories button{background:transparent}
   .data-categories #dataTrash{margin-top:0}

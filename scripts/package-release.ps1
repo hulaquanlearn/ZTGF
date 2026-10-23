@@ -1,23 +1,41 @@
 $ErrorActionPreference = 'Stop'
-$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$package = Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json
-if ($package.version -notmatch '^\d+\.\d+\.\d+$') { throw 'Unexpected package version' }
-$releaseVersion = ($package.version.Split('.')[0..1] -join '.')
+Set-StrictMode -Version Latest
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$packageVersion = (Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json).version
+if ($packageVersion -ne '6.3.3') { throw 'Expected version 6.3.3' }
 $outputRoot = Join-Path $projectRoot 'releases'
 New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
-$archive = Join-Path $outputRoot "quizforge-v$releaseVersion-openclaw-node-mysql.zip"
-if (Test-Path -LiteralPath $archive) { throw "Release already exists: $archive. Keep it or select a new version before packaging." }
-$entries = @('.env.example','.gitignore','database','docs','public','scripts','src','ecosystem.config.cjs','package.json','package-lock.json','test-fixture.md','README.md','OPENCLAW-DEPLOY.md',"RELEASE-NOTES-v$releaseVersion.md")
-foreach ($entry in $entries) { if (!(Test-Path -LiteralPath (Join-Path $projectRoot $entry))) { throw "Missing release file: $entry" } }
-& tar -a -cf $archive -C $projectRoot @entries
-if ($LASTEXITCODE -ne 0) { throw 'Archive creation failed' }
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$zip = [System.IO.Compression.ZipFile]::OpenRead($archive)
+$archivePath = Join-Path $outputRoot 'quizforge-6.3.3-standby-20261011.zip'
+if (Test-Path -LiteralPath $archivePath) { throw 'Release already exists; do not overwrite.' }
+$files = @('.env.example','.gitignore','package.json','package-lock.json','ecosystem.config.cjs','README.md','WORKBENCH-DEPLOY.md','STANDBY-GUIDE.md','OPENCLAW-DEPLOY.md','server-content-template.json','test-fixture.md')
+foreach ($directory in @('public','src','database','docs','scripts')) {
+  $files += @(Get-ChildItem -LiteralPath (Join-Path $projectRoot $directory) -Recurse -File | ForEach-Object { [IO.Path]::GetRelativePath($projectRoot,$_.FullName).Replace('\','/') })
+}
+$manifest = @($files | Sort-Object -Unique | ForEach-Object {
+  $source = Join-Path $projectRoot $_
+  if (!(Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing file: $_" }
+  if ($_ -match '(^|/)(\.env|node_modules|data|uploads|tmp|backups)(/|$)' -or $_ -match '\.(bak|log|zip|pdf)$') { throw "Forbidden file: $_" }
+  [PSCustomObject]@{path=$_;sha256=(Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLower();bytes=(Get-Item -LiteralPath $source).Length}
+})
+$stream = [IO.File]::Open($archivePath,[IO.FileMode]::CreateNew)
+$zip = [IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create)
 try {
-  $bad = @($zip.Entries | Where-Object { $_.FullName.Contains('\') -or $_.FullName -match '(^|/)(\.env|node_modules|data|uploads|tmp|quizforge\.json)(/|$)' -or $_.FullName -match '\.pdf$' })
-  if ($bad.Count) { throw "Unexpected archive entries: $($bad.FullName -join ', ')" }
-  $entryCount = $zip.Entries.Count
-} finally { $zip.Dispose() }
-$guide = Join-Path $outputRoot "quizforge-v$releaseVersion-openclaw-deploy.md"
-Copy-Item -LiteralPath (Join-Path $projectRoot 'OPENCLAW-DEPLOY.md') -Destination $guide
-[PSCustomObject]@{archive=$archive;guide=$guide;files=$entryCount;bytes=(Get-Item -LiteralPath $archive).Length;sha256=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash} | ConvertTo-Json
+  foreach ($item in $manifest) { [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,(Join-Path $projectRoot $item.path),$item.path,[IO.Compression.CompressionLevel]::Optimal) | Out-Null }
+  $writer = [IO.StreamWriter]::new($zip.CreateEntry('MANIFEST.json').Open(),[Text.UTF8Encoding]::new($false))
+  try { $writer.Write((ConvertTo-Json -InputObject $manifest -Depth 4)) } finally { $writer.Dispose() }
+} finally { $zip.Dispose(); $stream.Dispose() }
+$read = [IO.Compression.ZipFile]::OpenRead($archivePath)
+try {
+  foreach ($item in $manifest) {
+    $entry = $read.GetEntry($item.path)
+    if (!$entry -or $entry.Length -ne $item.bytes) { throw "ZIP manifest mismatch: $($item.path)" }
+    $entryStream = $entry.Open(); $hasher = [Security.Cryptography.SHA256]::Create()
+    try { if ([Convert]::ToHexString($hasher.ComputeHash($entryStream)).ToLower() -ne $item.sha256) { throw 'ZIP hash mismatch' } } finally { $entryStream.Dispose(); $hasher.Dispose() }
+  }
+  if ($read.Entries.Count -ne $manifest.Count + 1) { throw 'ZIP entry count mismatch' }
+} finally { $read.Dispose() }
+$hash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLower()
+[IO.File]::WriteAllText($archivePath+'.sha256',"$hash  $([IO.Path]::GetFileName($archivePath))`n",[Text.UTF8Encoding]::new($false))
+Copy-Item -LiteralPath (Join-Path $projectRoot 'WORKBENCH-DEPLOY.md') -Destination (Join-Path $outputRoot 'quizforge-6.3.3-standby-deploy.md')
+[PSCustomObject]@{archive=$archivePath;files=$manifest.Count;bytes=(Get-Item -LiteralPath $archivePath).Length;sha256=$hash} | ConvertTo-Json

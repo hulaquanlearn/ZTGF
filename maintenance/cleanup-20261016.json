@@ -1,0 +1,282 @@
+[
+  {
+    "path": "E:\\workspace\\quizforge\\audits",
+    "directory": true,
+    "files": 51,
+    "bytes": 2165760,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\maintenance\\standby-workbench-before-20261012.js",
+    "directory": false,
+    "files": 1,
+    "bytes": 24415,
+    "result": "recycled",
+    "reason": "Obsolete source backup; active implementation retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\corpus-preview",
+    "directory": true,
+    "files": 2,
+    "bytes": 98722,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\project-review-d644511f03a24436b3b0a562a7f10e4e",
+    "directory": true,
+    "files": 0,
+    "bytes": null,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\redesign",
+    "directory": true,
+    "files": 37,
+    "bytes": 199624,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\rollback-20261012",
+    "directory": true,
+    "files": 184,
+    "bytes": 2375659,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261011",
+    "directory": true,
+    "files": 8,
+    "bytes": 2723314,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-release-6.3.3",
+    "directory": true,
+    "files": 4,
+    "bytes": 100573,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\check-min-rule.mjs",
+    "directory": false,
+    "files": 1,
+    "bytes": 866,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\render-min-table-pdf.py",
+    "directory": false,
+    "files": 1,
+    "bytes": 364,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\render-min-table.ps1",
+    "directory": false,
+    "files": 1,
+    "bytes": 750,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\verify-min-table-files.mjs",
+    "directory": false,
+    "files": 1,
+    "bytes": 2690,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261010\\browser-exports",
+    "directory": true,
+    "files": 6,
+    "bytes": 720776,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261010\\web-exports",
+    "directory": true,
+    "files": 5,
+    "bytes": 573685,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261010\\analysis.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 359523,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261010\\duties.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 14587,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261010\\input.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 12370,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261010\\login-proof.jpg",
+    "directory": false,
+    "files": 1,
+    "bytes": 38213,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261010\\pairing-proof.jpg",
+    "directory": false,
+    "files": 1,
+    "bytes": 93277,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261010\\proposals.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 321346,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\.verification\\standby-20261010\\standby-proof.jpg",
+    "directory": false,
+    "files": 1,
+    "bytes": 82110,
+    "result": "recycled",
+    "reason": "Completed one-time verification output, screenshot, log or helper; preview account and draft data retained"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\scripts\\package-release.ps1",
+    "directory": false,
+    "files": 1,
+    "bytes": 1985,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\scripts\\package-flight-release.ps1",
+    "directory": false,
+    "files": 1,
+    "bytes": 3660,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\scripts\\package-corpus-release.ps1",
+    "directory": false,
+    "files": 1,
+    "bytes": 3131,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\scripts\\package-password-frontend.ps1",
+    "directory": false,
+    "files": 1,
+    "bytes": 1736,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\scripts\\package-today-update.ps1",
+    "directory": false,
+    "files": 1,
+    "bytes": 3983,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\maintenance\\cleanup-6.3.3-20261011.ps1",
+    "directory": false,
+    "files": 1,
+    "bytes": 5232,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\docs\\standby-verification-6.3.0.md",
+    "directory": false,
+    "files": 1,
+    "bytes": 2961,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\docs\\standby-verification-6.3.1.md",
+    "directory": false,
+    "files": 1,
+    "bytes": 2104,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\docs\\standby-verification-6.3.2.md",
+    "directory": false,
+    "files": 1,
+    "bytes": 3789,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\docs\\CORPUS-DEPLOY-20261009.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 2052,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\FLIGHTS-DEPLOY.md",
+    "directory": false,
+    "files": 1,
+    "bytes": 5123,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\PASSWORD-UPDATE-DEPLOY.md",
+    "directory": false,
+    "files": 1,
+    "bytes": 2469,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\RELEASE-NOTES-v6.0.md",
+    "directory": false,
+    "files": 1,
+    "bytes": 1010,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  },
+  {
+    "path": "E:\\workspace\\quizforge\\RELEASE-NOTES-v6.1.md",
+    "directory": false,
+    "files": 1,
+    "bytes": 602,
+    "reason": "Superseded release script or historical deployment instructions; current entry and archived release retained",
+    "result": "recycled"
+  }
+]

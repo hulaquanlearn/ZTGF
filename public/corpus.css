@@ -20,8 +20,8 @@
 .corpus-entry-number { display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#edf3ee; color:#3a6550; min-width:26px; height:26px; font-size:13px; flex-shrink:0; }
 .corpus-entry .corpus-preview,.corpus-example,.corpus-tags { margin-left:36px; }
 .corpus-example { color:#68766b; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; margin-top:8px; margin-bottom:8px; }
-[aria-label="语料分类"].module-cards { flex-direction: row; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; }
-[aria-label="语料分类"] .module-card { min-width:0; min-height:44px; justify-content:center; text-align:center; padding:10px 4px; }
+
+
 #corpusSearch { margin-bottom: 24px; gap: 12px; }
 #corpusSearch input { flex: 1; min-width: 150px; }
 @media(max-width:600px) {

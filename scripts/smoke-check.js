@@ -25,12 +25,21 @@ try {
     await new Promise(resolve => setTimeout(resolve, 150));
   }
   check(health?.accountMode === 'unified', `服务未正确启动：${output.slice(-1500)}`);
+  const appVersionResponse = await fetch(`${base}/api/app-version`);
+  const appVersion = await appVersionResponse.json();
+  check(appVersionResponse.ok && /^[a-f0-9]{64}$/.test(appVersion.webRevision) && appVersionResponse.headers.get('cache-control') === 'no-store', '安卓在线版本检测不可用');
+  const androidPage = await fetch(`${base}/android/`);
+  check(androidPage.ok && (await androidPage.text()).includes('/android/install.js'), '安卓下载页不可用');
+  if (appVersion.android) {
+    const apk = await fetch(`${base}${appVersion.android.apkPath}`);
+    check(apk.ok && (await apk.arrayBuffer()).byteLength > 10000, '已发布的安卓安装包无法下载');
+  }
   const page = await (await fetch(`${base}/`)).text();
-  check(page.includes('/workspace.js') && page.includes('/app.css') && page.includes('href="/banks"') && page.includes('href="/english"') && page.includes('href="/ielts"') && page.includes('href="/corpus"'), '新版界面资源缺失');
+  check(page.includes('/workspace.js') && page.includes('/app.css') && page.includes('href="/query"') && page.includes('href="/me"'), '新版界面资源缺失');
   check((await fetch(`${base}/workspace.js`)).ok && (await fetch(`${base}/app.css`)).ok, '界面文件无法加载');
-  for(const asset of ['flight-workbench.js','browser-uuid.js','flight-workbench.css','workbench.css','standby-calculator.js','standby-workbench.js','standby-workbench.css'])check((await fetch(`${base}/${asset}`)).ok,'改版资源无法加载：'+asset);
-  check((await fetch(`${base}/flights/standby`)).ok&&page.includes('id="toolsMenu"')&&page.includes('id="accountMenu"'),'工具或账号菜单缺失');
-  check(page.includes('id="siteHeader"')&&!page.includes('id="sidebar"')&&page.includes('考研英语'),'顶部导航改版未包含在服务中');
+  for(const asset of ['workbench.css','standby-calculator.js','learning-home.js','lookup.js','icons/search.svg','query.css','assets/login-paper-grid.webp'])check((await fetch(`${base}/${asset}`)).ok,'改版资源无法加载：'+asset);
+  check((await fetch(`${base}/flights/standby`)).ok&&page.includes('id="accountMenu"'),'工具或账号菜单缺失');
+  check(page.includes('id="siteHeader"')&&!page.includes('id="sidebar"')&&page.includes('雅思工坊'),'顶部导航改版未包含在服务中');
   check((await fetch(`${base}/api/banks`)).status === 401, '匿名请求未被拒绝');
   const session = await (await fetch(`${base}/api/account/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'smoke-account', password: 'smoke-private-password' }) })).json();
   check(session.token && !Object.hasOwn(session, 'role'), '统一账号登录失败');

@@ -4,38 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#176b57">
-  <title>智题工坊 · 我的学习空间</title>
-  <link rel="stylesheet" href="/app.css?v=20261014-cleanup">
+  <title>雅思工坊 · 我的学习空间</title>
+  <link rel="stylesheet" href="/app.css?v=20261023-design">
   <link rel="stylesheet" href="/refinements.css?v=20261008-p1">
   <link rel="stylesheet" href="/corpus.css?v=20261014-cleanup">
-  <link rel="stylesheet" href="/flight-workbench.css?v=20261014-cleanup">
-  <link rel="stylesheet" href="/standby-workbench.css?v=20261014-cleanup">
   <link rel="stylesheet" href="/workbench.css?v=20261014-cleanup">
   <link rel="stylesheet" href="/redesign.css?v=20261014-cleanup">
-  <link rel="stylesheet" href="/login-variants.css?v=20261014-cleanup">
-  <link rel="stylesheet" href="/theme.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/login.css?v=20261023-design">
+  <link rel="stylesheet" href="/theme.css?v=20261023-design">
   <link rel="stylesheet" href="/navigation-layout.css?v=20261014-cleanup">
-  <link rel="stylesheet" href="/home.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/home.css?v=20261023-design">
   <link rel="stylesheet" href="/common-controls.css?v=20261014-cleanup">
+  <link rel="stylesheet" href="/query.css?v=20261023-design">
 </head>
 <body>
   <header id="siteHeader" class="site-header hidden">
-    <a class="brand" href="/"><span class="brand-icon">智</span><span>智题工坊</span></a>
+    <div class="page-context"><a id="pageBack" href="/" aria-label="返回"><img src="/icons/chevron-left.svg" alt=""></a><span id="pageTitle"></span></div>
+    <div id="pageActions" class="page-actions"></div>
     <button id="navToggle" class="secondary nav-toggle" aria-label="打开导航菜单" aria-controls="mainNav" aria-expanded="false">菜单</button>
-    <nav id="mainNav" aria-label="主导航">
-      <a href="/" data-section="home">首页</a>
-      <a href="/banks" data-section="banks">我的题库</a>
-      <a href="/english" data-section="english">考研英语</a>
-      <a href="/ielts" data-section="ielts">雅思学习</a>
-      <a href="/corpus" data-section="corpus">语料库</a>
-      <details id="toolsMenu" class="tools-menu"><summary>实用工具 <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg></summary><div class="tools-dropdown"><a href="/flights">航班时刻表</a><a href="/flights/standby">备份方案</a></div></details>
-    </nav>
-    <details id="accountMenu" class="header-account account-menu"><summary class="account-trigger" aria-label="账号菜单"><span id="accountAvatar" class="account-avatar">我</span><span class="account-label"><span id="accountName"></span><small>我的空间</small></span><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg></summary><div class="account-dropdown"><p>当前账号</p><strong id="accountMenuName"></strong><a href="/data" id="accountDataLink">数据管理</a><button id="logoutButton">退出登录</button></div></details>
+    <nav id="mainNav" aria-label="主导航"><a href="/" data-section="home">学习</a><a href="/query" data-section="query">查询</a><a href="/me" data-section="me">我的</a></nav>
+    <a href="/me" id="accountProfileLink" class="account-trigger" aria-label="个人中心"><span id="accountName" class="account-name"></span></a><details hidden id="accountMenu" class="header-account account-menu"><summary class="account-trigger" aria-label="账号菜单"><span>个人中心</span><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg></summary><div class="account-dropdown"><p>当前账号</p><strong id="accountMenuName"></strong><a href="/data" id="accountDataLink">数据管理</a><button id="logoutButton">退出登录</button></div></details>
   </header>
   <div id="workspace" class="workspace">
     <main id="app"><div class="loading" role="status">正在加载学习空间…</div></main>
   </div>
+  <nav id="mobileNav" class="mobile-bottom-nav hidden" aria-label="主功能导航">
+    <a href="/" data-section="home"><img src="/icons/home.svg" alt="" aria-hidden="true"><span>学习</span></a>
+    <a href="/query" data-section="query"><img src="/icons/search.svg" alt="" aria-hidden="true"><span>查询</span></a>
+    <a href="/me" data-section="me"><img src="/icons/user.svg" alt="" aria-hidden="true"><span>我的</span></a>
+  </nav>
   <div id="toast" class="toast hidden" role="status"></div>
-  <script type="module" src="/workspace.js?v=20261014-cleanup"></script>
+  <script type="module" src="/workspace.js?v=20261023-design"></script>
 </body>
 </html>

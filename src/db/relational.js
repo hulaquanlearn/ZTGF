@@ -130,7 +130,7 @@ export async function createRelationalStorage(env = process.env, dependencies = 
     const state = {
       corpus: corpus.map(row=>({...parse(row.payload_json,{}),id:row.id,ownerId:row.owner_id,createdAt:new Date(row.created_at).toISOString(),updatedAt:new Date(row.updated_at).toISOString()})),
       candidates: users.filter(row => row.role === 'user').map(row => ({
-        id: row.id, name: row.username, nameKey: row.username_key, salt: row.password_salt,
+        id: row.id, name: row.username, displayName: row.display_name || row.username, nameKey: row.username_key, salt: row.password_salt,
         passwordHash: row.password_hash, status: row.status, starterInitialized:Boolean(row.starter_initialized),createdAt: new Date(row.created_at).toISOString()
       })),
       sessions: sessions.map(row => ({
@@ -249,9 +249,9 @@ async function syncUsers(connection, previous, current) {
   await deleteMissing(connection, 'users', previous, current);
   const old = mapBy(previous, row => row.id);
   for (const row of current) if (rowChanged(old.get(row.id), row)) {
-    await connection.execute(`INSERT INTO users(id,username,username_key,role,status,password_salt,password_hash,starter_initialized,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE username=VALUES(username),username_key=VALUES(username_key),status=VALUES(status),password_salt=VALUES(password_salt),password_hash=VALUES(password_hash),starter_initialized=VALUES(starter_initialized),updated_at=VALUES(updated_at)`,
-      [row.id,row.name,row.nameKey,'user',row.status || 'active',row.salt,row.passwordHash,row.starterInitialized?1:0,date(row.createdAt),new Date()]);
+    await connection.execute(`INSERT INTO users(id,username,username_key,role,status,password_salt,password_hash,starter_initialized,created_at,updated_at,display_name)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE display_name=VALUES(display_name),username=VALUES(username),username_key=VALUES(username_key),status=VALUES(status),password_salt=VALUES(password_salt),password_hash=VALUES(password_hash),starter_initialized=VALUES(starter_initialized),updated_at=VALUES(updated_at)`,
+      [row.id,row.name,row.nameKey,'user',row.status || 'active',row.salt,row.passwordHash,row.starterInitialized?1:0,date(row.createdAt),new Date(),row.displayName||row.name]);
   }
 }
 

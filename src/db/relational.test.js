@@ -10,7 +10,8 @@ test('v6 upgrade adds fields once and widens tracks without deleting historical 
     async query(sql){mutations.push(sql);let m=sql.match(/ALTER TABLE (\w+) ADD COLUMN (\w+)/);if(m)columns.add(`${m[1]}.${m[2]}`);m=sql.match(/ALTER TABLE (\w+) MODIFY COLUMN track/);if(m)widened.add(m[1]);return [[]];}
   };
   await migrateV6(pool);await migrateV6(pool);
-  assert.equal(mutations.filter(x=>x.includes('ADD COLUMN')).length,4);
+  assert.equal(mutations.filter(x=>x.includes('ADD COLUMN')).length,5);
+  assert.ok(mutations.some(x=>x.includes('ADD COLUMN display_name VARCHAR(60) NULL')));
   assert.equal(mutations.filter(x=>x.includes('MODIFY COLUMN')).length,6);
   assert.equal(mutations.some(x=>/\b(DROP|DELETE|TRUNCATE)\b/i.test(x)),false);
 });
@@ -30,7 +31,7 @@ test('relational persistence binds category, private vocabulary, draft answers a
   const storage=await createRelationalStorage({}, {pool});
   const at=new Date().toISOString();
   await storage.persist({
-    candidates:[{id:'user-1',name:'learner',nameKey:'learner',salt:'salt',passwordHash:'hash',starterInitialized:true,createdAt:at}],
+    candidates:[{id:'user-1',name:'learner',displayName:'学习者',nameKey:'learner',salt:'salt',passwordHash:'hash',starterInitialized:true,createdAt:at}],
     sessions:[],quizzes:[{id:'bank-1',ownerId:'user-1',title:'软考',category:'系统集成',track:'general',questions:[],createdAt:at}],
     exams:[{id:'exam-1',candidateId:'user-1',candidateName:'learner',title:'练习',questions:[],draftAnswers:{0:'B'},createdAt:at}],attempts:[],
     vocabulary:[{id:'word-1',ownerId:'user-1',zh:'计划',en:'plan',track:'english',createdAt:at}],collections:[],collectionItems:[],wordProgress:[],translationHistory:[],
@@ -38,6 +39,7 @@ test('relational persistence binds category, private vocabulary, draft answers a
     corpus:[{id:'corpus-1',ownerId:'user-1',category:'reading',title:'Reading',content:'Example.',createdAt:at,updatedAt:at}]
   });
   const bank=calls.find(x=>x.sql.includes('INSERT INTO question_banks'));assert.match(bank.sql,/category_name/);assert.ok(bank.values.includes('系统集成'));
+  const user=calls.find(x=>x.sql.includes('INSERT INTO users'));assert.match(user.sql,/display_name=VALUES\(display_name\)/);assert.equal(user.values[1],'learner');assert.equal(user.values.at(-1),'学习者');
   const word=calls.find(x=>x.sql.includes('INSERT INTO vocabulary_entries'));assert.match(word.sql,/owner_id/);assert.equal(word.values[1],'user-1');
   const exam=calls.find(x=>x.sql.includes('INSERT INTO exams'));assert.match(exam.sql,/draft_answers_json/);assert.ok(exam.values.includes('{"0":"B"}'));
   assert.ok(calls.some(x=>x.sql.includes('INSERT INTO study_journal')));

@@ -58,7 +58,7 @@ test('语料四分类、查看编辑搜索、冲突提示及所有者隔离',asy
   assert.equal((await withToken(request(app).get('/api/corpus'),b.token)).body.length,0);
 });
 test('普通路径直接打开刷新返回页面，未知接口不伪装成网页',async()=>{
-  for(const url of ['/login','/corpus','/corpus/writing','/ielts/reading','/banks','/data','/flights?draft=preview']){const response=await request(app).get(url);assert.equal(response.status,200);assert.match(response.text,/智题工坊/);}
+  for(const url of ['/login','/corpus','/corpus/writing','/ielts/reading','/banks','/data','/flights?draft=preview']){const response=await request(app).get(url);assert.equal(response.status,200);assert.match(response.text,/雅思工坊/);}
   const response=await request(app).get('/api/not-existing');assert.notEqual(response.status,200);
 });
 

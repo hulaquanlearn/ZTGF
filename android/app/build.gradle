@@ -1,0 +1,64 @@
+plugins { id 'com.android.application' }
+
+def signingFile = rootProject.file('signing.properties')
+def signing = new Properties()
+if (signingFile.exists()) signingFile.withInputStream { signing.load(it) }
+
+android {
+    namespace 'cn.quizforge.app'
+    compileSdk 35
+    buildFeatures { buildConfig true }
+    defaultConfig {
+        applicationId 'cn.quizforge.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 6
+        versionName '1.0.5'
+    }
+    signingConfigs {
+        if (signingFile.exists()) {
+            release {
+                storeFile rootProject.file(signing.getProperty('storeFile'))
+                storePassword signing.getProperty('storePassword')
+                keyAlias signing.getProperty('keyAlias')
+                keyPassword signing.getProperty('keyPassword')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (signingFile.exists()) signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+tasks.register('compileServerPolicyTests', JavaCompile) {
+    source fileTree('src/main/java') { include '**/ServerPolicy.java', '**/CredentialCipher.java', '**/UpdateReminder.java' }
+    source fileTree('src/test/java') { include '**/ServerPolicyTest.java', '**/CredentialCipherTest.java', '**/UpdateReminderTest.java' }
+    classpath = files()
+    destinationDirectory = layout.buildDirectory.dir('policy-tests')
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+    options.encoding = 'UTF-8'
+}
+tasks.register('checkSavedPasswords', JavaExec) {
+    dependsOn 'compileServerPolicyTests'
+    classpath = files(layout.buildDirectory.dir('policy-tests'))
+    mainClass = 'cn.quizforge.app.CredentialCipherTest'
+}
+tasks.register('checkServerPolicy', JavaExec) {
+    dependsOn 'compileServerPolicyTests'
+    classpath = files(layout.buildDirectory.dir('policy-tests'))
+    mainClass = 'cn.quizforge.app.ServerPolicyTest'
+}
+
+tasks.register('checkUpdateReminder', JavaExec) {
+    dependsOn 'compileServerPolicyTests'
+    classpath = files(layout.buildDirectory.dir('policy-tests'))
+    mainClass = 'cn.quizforge.app.UpdateReminderTest'
+}

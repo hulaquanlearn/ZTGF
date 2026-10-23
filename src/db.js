@@ -64,12 +64,12 @@ export const store = {
   claimLegacyBanks: ownerId => {
     const owner=store.getCandidateById(ownerId);if(!owner)return 0;
     let count=0;
-    for(const bank of state.quizzes)if(!bank.ownerId&&!isLegacyRemovedTrack(bank.track)){bank.ownerId=ownerId;bank.ownerName=owner.name;bank.visibility='private';count++;}
+    for(const bank of state.quizzes)if(!bank.ownerId&&!isLegacyRemovedTrack(bank.track)){bank.ownerId=ownerId;bank.ownerName=owner.displayName||owner.name;bank.visibility='private';count++;}
     if(count)persist();return count;
   },
   ensureStarterBanks: (candidateId,banks) => {
     const candidate=store.getCandidateById(candidateId);if(!candidate||candidate.starterInitialized)return 0;
-    for(const source of banks){const bank=structuredClone(source);delete bank.seedKey;bank.id=crypto.randomUUID();bank.ownerId=candidateId;bank.ownerName=candidate.name;bank.visibility='private';bank.status='published';bank.createdAt=new Date().toISOString();bank.questions=(bank.questions||[]).map(q=>({...q,id:crypto.randomUUID(),reviewStatus:'approved'}));state.quizzes.push(bank);}
+    for(const source of banks){const bank=structuredClone(source);delete bank.seedKey;bank.id=crypto.randomUUID();bank.ownerId=candidateId;bank.ownerName=candidate.displayName||candidate.name;bank.visibility='private';bank.status='published';bank.createdAt=new Date().toISOString();bank.questions=(bank.questions||[]).map(q=>({...q,id:crypto.randomUUID(),reviewStatus:'approved'}));state.quizzes.push(bank);}
     candidate.starterInitialized=true;persist();return banks.length;
   },
   listStudyJournal: candidateId => state.studyJournal.filter(row=>row.candidateId===candidateId).slice().reverse(),
@@ -109,7 +109,7 @@ export const store = {
     return { ok:true, candidate, created:false };
   },
   createCandidate: (name,password) => {const value=String(name||'').trim();if(!value||value.length>40)return {ok:false,error:'账号须非空且最多40个字符'};const key=value.toLowerCase();if(state.candidates.some(candidate=>candidate.nameKey===key))return {ok:false,error:'用户账号已存在'};return store.authenticateCandidate(name,password,true);},
-  listCandidates: () => state.candidates.map(candidate=>({id:candidate.id,name:candidate.name,status:candidate.status||'active',createdAt:candidate.createdAt,attemptCount:state.attempts.filter(x=>x.candidateId===candidate.id).length,quizCount:state.quizzes.filter(x=>x.ownerId===candidate.id).length})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)),
+  listCandidates: () => state.candidates.map(candidate=>({id:candidate.id,name:candidate.displayName||candidate.name,username:candidate.name,status:candidate.status||'active',createdAt:candidate.createdAt,attemptCount:state.attempts.filter(x=>x.candidateId===candidate.id).length,quizCount:state.quizzes.filter(x=>x.ownerId===candidate.id).length})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)),
   getCandidateById: id => state.candidates.find(candidate=>candidate.id===id)||null,
   setCandidateStatus: (id,status) => {const candidate=state.candidates.find(x=>x.id===id);if(!candidate||!['active','disabled'].includes(status))return false;candidate.status=status;if(status==='disabled')state.sessions=state.sessions.filter(x=>x.userId!==id);persist();return true;},
   resetCandidatePassword: (id,password) => {const candidate=state.candidates.find(x=>x.id===id),secret=String(password||'');if(!candidate||secret.length<6)return false;candidate.salt=crypto.randomBytes(16).toString('hex');candidate.passwordHash=passwordDigest(secret,candidate.salt);state.sessions=state.sessions.filter(x=>x.userId!==id);persist();return true;},
